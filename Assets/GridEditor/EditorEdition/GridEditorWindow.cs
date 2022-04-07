@@ -1,15 +1,13 @@
-using System.Collections;
-using System.Collections.Generic;
-using UnityEngine;
 using UnityEditor;
 using UnityEditor.SceneManagement;
+using UnityEngine;
 using UnityEngine.SceneManagement;
 
 public class GridEditorWindow : EditorWindow
 {
     public static Object obj;
     public static Object gridObject;
-    private Texture2D texture; 
+    private Texture2D texture;
 
     private EditorGridSelections editorGridSelections;
 
@@ -17,7 +15,7 @@ public class GridEditorWindow : EditorWindow
     /// ウィンドウを表示します。
     /// </Summary>
     [MenuItem("Window/GridWindow")]
-    static void Open()
+    private static void Open()
     {
         var window = GetWindow<GridEditorWindow>();
         window.titleContent = new GUIContent("Grid");

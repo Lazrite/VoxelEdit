@@ -50,7 +50,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y);
                 gridManager.ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y);
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -67,7 +67,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
                 gridManager.ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -84,7 +84,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i;
                 gridManager.ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i;
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -101,7 +101,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
                 gridManager.ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -118,7 +118,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y));
                 gridManager.ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y));
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -135,7 +135,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
                 gridManager.ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
                 gridManager.ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -516,7 +516,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z - 0.5f), Quaternion.Euler(0, -180, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z - 0.5f), Quaternion.Euler(0, -180, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }
@@ -530,7 +530,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z + 0.5f), Quaternion.identity, this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z + 0.5f), Quaternion.identity, gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }
@@ -544,7 +544,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x - 0.5f,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, -90, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, -90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }
@@ -558,7 +558,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x + 0.5f,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, 90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }
@@ -572,7 +572,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y - 0.5f,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }
@@ -586,7 +586,7 @@ public class GenerateAblePlacementArea : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y + 0.5f,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(-90, 0, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(-90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = instantiateBuffer;
             }

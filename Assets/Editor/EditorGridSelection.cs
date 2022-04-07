@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -180,7 +179,7 @@ public class EditorGridSelection : MonoBehaviour
         }
     }
 
-        private int ConjecturePlacementObjIndex(RaycastHit hitObj)
+    private int ConjecturePlacementObjIndex(RaycastHit hitObj)
     {
         var hitAngles = hitObj.collider.transform.eulerAngles;
         var hitIndex = hitObj.collider.GetComponent<GridRelatedInfo>().gridIndex;

@@ -20,8 +20,8 @@ public class CameraLikeSceneView : MonoBehaviour
     public Vector2 CameraRotateSpeedBuffer;
     public Vector3 mouseDiffBuffer;
 
-    [SerializeField] RotationInfomation rotationInfo = default;
-    [SerializeField] Camera camera = default;
+    [SerializeField] private RotationInfomation rotationInfo = default;
+    [SerializeField] private Camera camera = default;
 
     private void Update()
     {
@@ -33,12 +33,16 @@ public class CameraLikeSceneView : MonoBehaviour
     {
         float scrollWheel = Input.GetAxis("Mouse ScrollWheel");
         if (scrollWheel != 0.0f)
+        {
             MouseWheel(scrollWheel);
+        }
 
         if (Input.GetMouseButtonDown(0) ||
            Input.GetMouseButtonDown(1) ||
            Input.GetMouseButtonDown(2))
+        {
             preMousePos = Input.mousePosition;
+        }
 
         MouseDrag(Input.mousePosition);
     }
@@ -55,12 +59,18 @@ public class CameraLikeSceneView : MonoBehaviour
         mouseDiffBuffer = diff;
 
         if (diff.magnitude < Vector3.kEpsilon)
+        {
             return;
+        }
 
         if (Input.GetMouseButton(2))
+        {
             transform.Translate(-diff * Time.deltaTime * moveSpeed);
+        }
         else if (Input.GetMouseButton(1))
+        {
             CameraRotate(new Vector2(-diff.y, diff.x) * rotateSpeed);
+        }
 
         preMousePos = mousePos;
         CameraRotateSpeedBuffer = new Vector2(-diff.y, diff.x) * rotateSpeed;

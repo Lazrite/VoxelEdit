@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -17,13 +16,13 @@ public enum ToolMode
 
 public class PlaceDownPanelUI : MonoBehaviour
 {
-    [SerializeField] List<Button> modeButton = default;
+    [SerializeField] private List<Button> modeButton = default;
 
     public OperationMode selectMode;
-    
+
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         selectMode = OperationMode.OPERATION_CLICK;
         foreach (var button in modeButton)
@@ -38,15 +37,15 @@ public class PlaceDownPanelUI : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+
     }
 
     public void OnSelectClickDown()
     {
         selectMode = OperationMode.OPERATION_CLICK;
-        foreach(var button in modeButton)
+        foreach (var button in modeButton)
         {
             button.interactable = true;
 

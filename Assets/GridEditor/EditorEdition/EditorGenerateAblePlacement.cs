@@ -1,10 +1,10 @@
-using UnityEngine;
 using UnityEditor;
+using UnityEngine;
 
 [ExecuteAlways]
 public class EditorGenerateAblePlacement : MonoBehaviour
 {
-    [SerializeField] private GameObject areaGameObject;
+    private GameObject areaGameObject;
 
     private EditorGridField gridManager;
     private Vector3Int size;
@@ -12,6 +12,11 @@ public class EditorGenerateAblePlacement : MonoBehaviour
     private Object instantiateBuffer;
 
     private int currentIndex;
+
+    public EditorGenerateAblePlacement(GameObject areaGameObject)
+    {
+        this.areaGameObject = (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab", typeof(GameObject));
+    }
 
     // Start is called before the first frame update
     private void Start()
@@ -363,7 +368,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                     instantiateBuffer = PrefabUtility.InstantiatePrefab(areaGameObject);
 
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].x,
+                    transform.position + new Vector3(gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].x,
                                 gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].y,
                                 gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].z + 0.5f), Quaternion.Euler(0, -180, 0), gridManager.placedObjects[index - (size.x * size.y) - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -390,7 +395,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].x,
+                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].x,
                                 gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].y,
                                 gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].z - 0.5f), Quaternion.Euler(0, 0, 0), gridManager.placedObjects[index + (size.x * size.y) - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -417,7 +422,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index + size.y - 1].x - 0.5f,
+                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + size.y - 1].x - 0.5f,
                                 gridManager.gridPosFromIndex[index + size.y - 1].y,
                                 gridManager.gridPosFromIndex[index + size.y - 1].z), Quaternion.Euler(0, 90, 0), gridManager.placedObjects[index + size.y - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -444,7 +449,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index - size.y - 1].x + 0.5f,
+                        transform.position + new Vector3(gridManager.gridPosFromIndex[index - size.y - 1].x + 0.5f,
                                 gridManager.gridPosFromIndex[index - size.y - 1].y,
                                 gridManager.gridPosFromIndex[index - size.y - 1].z), Quaternion.Euler(0, -90, 0), gridManager.placedObjects[index - size.y - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -471,7 +476,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index + 1 - 1].x,
+                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + 1 - 1].x,
                                 gridManager.gridPosFromIndex[index + 1 - 1].y - 0.5f,
                                 gridManager.gridPosFromIndex[index + 1 - 1].z), Quaternion.Euler(-90, 0, 0), gridManager.placedObjects[index + 1 - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -498,7 +503,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.gridPosFromIndex[index - 1 - 1].x,
+                        transform.position + new Vector3(gridManager.gridPosFromIndex[index - 1 - 1].x,
                                 gridManager.gridPosFromIndex[index - 1 - 1].y + 0.5f,
                                 gridManager.gridPosFromIndex[index - 1 - 1].z), Quaternion.Euler(90, 0, 0), gridManager.placedObjects[index - 1 - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -519,7 +524,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z - 0.5f), Quaternion.Euler(0, -180, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z - 0.5f), Quaternion.Euler(0, -180, 0), gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }
@@ -533,7 +538,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z + 0.5f), Quaternion.identity, this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z + 0.5f), Quaternion.identity, gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }
@@ -547,7 +552,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x - 0.5f,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, -90, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, -90, 0), gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }
@@ -561,7 +566,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x + 0.5f,
                                     gridManager.gridPosFromIndex[index - 1].y,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(0, 90, 0), gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }
@@ -575,7 +580,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y - 0.5f,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(90, 0, 0), gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }
@@ -589,7 +594,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject,
                         new Vector3(gridManager.gridPosFromIndex[index - 1].x,
                                     gridManager.gridPosFromIndex[index - 1].y + 0.5f,
-                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(-90, 0, 0), this.gameObject.transform);
+                                    gridManager.gridPosFromIndex[index - 1].z), Quaternion.Euler(-90, 0, 0), gameObject.transform);
                 ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
                 gridManager.ablePLacementSurround.obj[buf] = ((GameObject)instantiateBuffer);
             }

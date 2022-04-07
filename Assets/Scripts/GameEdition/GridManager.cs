@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class GridManager : MonoBehaviour
@@ -39,9 +37,9 @@ public class GridManager : MonoBehaviour
 
             for (int i = 0; i < size.z; i++)
             {
-                for(int j = 0; j < size.x; j++)
+                for (int j = 0; j < size.x; j++)
                 {
-                    for(int k = 0; k < size.y; k++)
+                    for (int k = 0; k < size.y; k++)
                     {
                         gridPosFromIndexMultiple[j, k, i] = new Vector3(0.5f + j, 0.5f + k, 0.5f + i);
                     }
@@ -63,7 +61,7 @@ public class GridManager : MonoBehaviour
 
     private void LateUpdate()
     {
-        if(OnChangeGridInfo())
+        if (OnChangeGridInfo())
         {
             oldLineSize = lineSize;
             oldMaterial = material;
@@ -73,7 +71,7 @@ public class GridManager : MonoBehaviour
 
     public bool OnChangeGridInfo()
     {
-        if(material != oldMaterial || size != oldSize || lineSize != oldLineSize)
+        if (material != oldMaterial || size != oldSize || lineSize != oldLineSize)
         {
             return true;
         }
@@ -83,10 +81,25 @@ public class GridManager : MonoBehaviour
 
     private void OnValidate()
     {
-        if (size.x < 1) size.x = 1;
-        if (size.y < 1) size.y = 1;
-        if (size.z < 1) size.z = 1;
-        if (lineSize < 0.01f) lineSize = 0.01f;
+        if (size.x < 1)
+        {
+            size.x = 1;
+        }
+
+        if (size.y < 1)
+        {
+            size.y = 1;
+        }
+
+        if (size.z < 1)
+        {
+            size.z = 1;
+        }
+
+        if (lineSize < 0.01f)
+        {
+            lineSize = 0.01f;
+        }
     }
 
 }

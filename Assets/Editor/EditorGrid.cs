@@ -1,5 +1,4 @@
 using UnityEngine;
-using System;
 
 #if UNITY_EDITOR
 using UnityEditor;
@@ -10,7 +9,7 @@ public class EditorGrid : Editor
     public float GRID = 0.32f;
     public Vector3Int gridSize = new Vector3Int(5, 5, 5);
 
-    void OnSceneGUI()
+    private void OnSceneGUI()
     {
         // 選択中のオブジェクト位置
         Vector3 targetPos = Selection.activeGameObject.transform.position;
@@ -46,7 +45,7 @@ public class EditorGrid : Editor
     }
 
     //フォーカスが外れたときに実行
-    void OnDisable()
+    private void OnDisable()
     {
         //Sceneビュー更新
         EditorUtility.SetDirty(target);

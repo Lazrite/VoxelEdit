@@ -1,6 +1,5 @@
-using UnityEngine;
-using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
 
 
 public class SelectGridField : MonoBehaviour
@@ -80,12 +79,12 @@ public class SelectGridField : MonoBehaviour
                 {
                     if (hit.collider != null)
                     {
-                        if(hit.collider.GetComponent<GridRelatedInfo>() != null)
+                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
                         {
                             index = ConjecturePlacementObjIndex(hit);
                         }
 
-                        if(hit.collider.transform.parent.name == "AblePlacement")
+                        if (hit.collider.transform.parent.name == "AblePlacement")
                         {
                             return;
                         }
@@ -95,7 +94,7 @@ public class SelectGridField : MonoBehaviour
                         gridManager.placedObjects[index - 1] = null;
                         placementArea.AddAdJoinPlacement(index);
 
-                        if(System.Array.IndexOf(gridManager.ablePLacementSurround.index, index) != -1)
+                        if (System.Array.IndexOf(gridManager.ablePLacementSurround.index, index) != -1)
                         {
                             placementArea.AddSurroundPlacement(index);
                         }
@@ -118,7 +117,7 @@ public class SelectGridField : MonoBehaviour
                             return;
                         }
 
-                        if(gridManager.isPlaced[index - 1])
+                        if (gridManager.isPlaced[index - 1])
                         {
                             return;
                         }
@@ -140,10 +139,10 @@ public class SelectGridField : MonoBehaviour
                     placementArea.DeletePlacementArea();
                 }
 
-                if(Input.GetMouseButton(1))
+                if (Input.GetMouseButton(1))
                 {
 
-                    if(indexNumList == null)
+                    if (indexNumList == null)
                     {
                         indexNumList = new List<int>();
                     }
@@ -164,7 +163,7 @@ public class SelectGridField : MonoBehaviour
                         gridManager.isPlaced[index - 1] = false;
                         gridManager.placedObjects[index - 1] = null;
                         indexNumList.Add(index);
-                        
+
                     }
                 }
 

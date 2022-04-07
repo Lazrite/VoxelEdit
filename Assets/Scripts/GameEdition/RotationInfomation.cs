@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class RotationInfomation : MonoBehaviour
@@ -24,22 +22,22 @@ public class RotationInfomation : MonoBehaviour
     private int arrayBuffer = 0;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         InfoObjects = new GameObject[12];
 
-        InfoObjects[0] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x - 0.5f, this.gameObject.transform.position.y - 0.5f, this.gameObject.transform.position.z), Quaternion.identity, this.gameObject.transform);
-        InfoObjects[1] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x + 0.5f, this.gameObject.transform.position.y - 0.5f, this.gameObject.transform.position.z), Quaternion.identity, this.gameObject.transform);
-        InfoObjects[2] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x - 0.5f, this.gameObject.transform.position.y + 0.5f, this.gameObject.transform.position.z), Quaternion.identity, this.gameObject.transform);
-        InfoObjects[3] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x + 0.5f, this.gameObject.transform.position.y + 0.5f, this.gameObject.transform.position.z), Quaternion.identity, this.gameObject.transform);
-        InfoObjects[4] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x, this.gameObject.transform.position.y - 0.5f, this.gameObject.transform.position.z - 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
-        InfoObjects[5] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x, this.gameObject.transform.position.y + 0.5f, this.gameObject.transform.position.z - 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
-        InfoObjects[6] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x, this.gameObject.transform.position.y - 0.5f, this.gameObject.transform.position.z + 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
-        InfoObjects[7] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x, this.gameObject.transform.position.y + 0.5f, this.gameObject.transform.position.z + 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
-        InfoObjects[8] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x - 0.5f, this.gameObject.transform.position.y, this.gameObject.transform.position.z - 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
-        InfoObjects[9] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x - 0.5f, this.gameObject.transform.position.y, this.gameObject.transform.position.z + 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
-        InfoObjects[10] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x + 0.5f, this.gameObject.transform.position.y, this.gameObject.transform.position.z - 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
-        InfoObjects[11] = Instantiate(emptyObj, new Vector3(this.gameObject.transform.position.x + 0.5f, this.gameObject.transform.position.y, this.gameObject.transform.position.z + 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
+        InfoObjects[0] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x - 0.5f, gameObject.transform.position.y - 0.5f, gameObject.transform.position.z), Quaternion.identity, gameObject.transform);
+        InfoObjects[1] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x + 0.5f, gameObject.transform.position.y - 0.5f, gameObject.transform.position.z), Quaternion.identity, gameObject.transform);
+        InfoObjects[2] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x - 0.5f, gameObject.transform.position.y + 0.5f, gameObject.transform.position.z), Quaternion.identity, gameObject.transform);
+        InfoObjects[3] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x + 0.5f, gameObject.transform.position.y + 0.5f, gameObject.transform.position.z), Quaternion.identity, gameObject.transform);
+        InfoObjects[4] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x, gameObject.transform.position.y - 0.5f, gameObject.transform.position.z - 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
+        InfoObjects[5] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x, gameObject.transform.position.y + 0.5f, gameObject.transform.position.z - 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
+        InfoObjects[6] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x, gameObject.transform.position.y - 0.5f, gameObject.transform.position.z + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
+        InfoObjects[7] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x, gameObject.transform.position.y + 0.5f, gameObject.transform.position.z + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
+        InfoObjects[8] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x - 0.5f, gameObject.transform.position.y, gameObject.transform.position.z - 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
+        InfoObjects[9] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x - 0.5f, gameObject.transform.position.y, gameObject.transform.position.z + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
+        InfoObjects[10] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x + 0.5f, gameObject.transform.position.y, gameObject.transform.position.z - 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
+        InfoObjects[11] = Instantiate(emptyObj, new Vector3(gameObject.transform.position.x + 0.5f, gameObject.transform.position.y, gameObject.transform.position.z + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
 
         InfoObjects[0].GetComponent<MeshRenderer>().material = materials[0];
         InfoObjects[4].GetComponent<MeshRenderer>().material = materials[1];
@@ -53,7 +51,7 @@ public class RotationInfomation : MonoBehaviour
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
 
     }
@@ -61,10 +59,10 @@ public class RotationInfomation : MonoBehaviour
     private void CreateInfo()
     {
         material = gridManager.material;
-        size = new Vector3Int(1 ,1, 1);
+        size = new Vector3Int(1, 1, 1);
         lineSize = gridManager.lineSize;
 
-        for(int i = 0; i < InfoObjects.Length; i++)
+        for (int i = 0; i < InfoObjects.Length; i++)
         {
             //新しいMeshを作成
             Mesh mesh = new Mesh();
@@ -83,7 +81,7 @@ public class RotationInfomation : MonoBehaviour
             //何回for分が回ったかをカウントさせる
             int x = 0, y = 0, z = 0;
 
-            switch(i)
+            switch (i)
             {
                 // 横線
                 case 0:
@@ -200,7 +198,7 @@ public class RotationInfomation : MonoBehaviour
 
             //設定したMaterialを反映
 
-            switch(i)
+            switch (i)
             {
                 case 0:
                     InfoObjects[i].GetComponent<MeshRenderer>().material = materials[0];
@@ -215,7 +213,7 @@ public class RotationInfomation : MonoBehaviour
                     InfoObjects[i].GetComponent<MeshRenderer>().material = material;
                     break;
             }
-            
+
         }
     }
 }

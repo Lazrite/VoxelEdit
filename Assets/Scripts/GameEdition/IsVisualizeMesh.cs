@@ -1,5 +1,4 @@
-using System.Collections;
-using System.Collections.Generic;
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -8,19 +7,23 @@ public class IsVisualizeMesh : MonoBehaviour
 {
     //選択判別用フラグ
     public bool select_flg;
+
     private EditorGridField editorGrid;
     private Object prefab;
 
-    void Start()
+    private void Start()
     {
         //フラグの初期化
         select_flg = false;
-        
     }
 
-    void Update()
+    private void Update()
     {
-        this.gameObject.GetComponent<MeshRenderer>().enabled = false;
+    }
+
+    private void OnRenderObject()
+    {
+        gameObject.GetComponent<MeshRenderer>().enabled = false;
 
         if (GridEditorWindow.gridObject == null)
         {
@@ -43,7 +46,7 @@ public class IsVisualizeMesh : MonoBehaviour
             //選択から外れたとき用
             select_flg = false;
             //オブジェクトの可視化
-            this.gameObject.GetComponent<MeshRenderer>().enabled = true;
+            gameObject.GetComponent<MeshRenderer>().enabled = true;
             //if (GridEditorWindow.obj != null && !editorGrid.isPlaced[this.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
             //{
             //    prefab = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
@@ -51,6 +54,15 @@ public class IsVisualizeMesh : MonoBehaviour
             //    ((GameObject)prefab).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
             //    ((GameObject)prefab).hideFlags = HideFlags.HideInHierarchy;
             //}
+
+
+        }
+
+        if (!Application.isPlaying)
+        {
+            EditorApplication.QueuePlayerLoopUpdate();
+            SceneView.RepaintAll();
         }
     }
 }
+#endif

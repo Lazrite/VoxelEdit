@@ -165,8 +165,19 @@ public class GridFlameView : MonoBehaviour
 
     private void OnValidate()
     {
-        if (size.x < 1) size.x = 1;
-        if (size.y < 1) size.y = 1;
-        if (size.z < 1) size.z = 1;
+        if (size.x < 1)
+        {
+            size.x = 1;
+        }
+
+        if (size.y < 1)
+        {
+            size.y = 1;
+        }
+
+        if (size.z < 1)
+        {
+            size.z = 1;
+        }
     }
 }

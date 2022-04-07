@@ -1,5 +1,3 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public enum CheckMode
@@ -18,20 +16,20 @@ public class IsPlacedCheck : MonoBehaviour
     [SerializeField] public CheckMode checkMode = default;
 
     // Start is called before the first frame update
-    void Start()
+    private void Start()
     {
         checkMode = new CheckMode();
     }
 
     // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        switch(checkMode)
+        switch (checkMode)
         {
             case CheckMode.CHECK_NONE:
                 break;
@@ -42,6 +40,6 @@ public class IsPlacedCheck : MonoBehaviour
                 //placementArea.serchedObject = other.gameObject;
                 break;
         }
-        
+
     }
 }

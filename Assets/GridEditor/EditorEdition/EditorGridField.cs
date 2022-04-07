@@ -1,7 +1,5 @@
-using UnityEngine;
 using UnityEditor;
-using System.Collections;
-using System.Collections.Generic;
+using UnityEngine;
 
 public class EditorGridField : MonoBehaviour
 {
@@ -34,6 +32,7 @@ public class EditorGridField : MonoBehaviour
         placedObjects = new GameObject[size.x * size.y * size.z];
         ablePLacementSurround.obj = new GameObject[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
         ablePLacementSurround.index = new float[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
+        areaGameObject = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab", typeof(GameObject)) as GameObject;
 
         for (int i = 0; i < size.z; i++)
         {
@@ -72,7 +71,7 @@ public class EditorGridField : MonoBehaviour
         }
 
         //‰½‰ñfor•ª‚ª‰ñ‚Á‚½‚©‚ðƒJƒEƒ“ƒg‚³‚¹‚é
-        int x = 0, y = 0, z = 0;
+        int x = 0, y = 0;
 
         // ‰¡ü
 
@@ -194,7 +193,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y);
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -213,7 +212,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -232,7 +231,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i;
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -251,7 +250,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -270,7 +269,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -289,7 +288,7 @@ public class EditorGridField : MonoBehaviour
                     continue;
                 }
 
-                instantiateBuffer = Instantiate(areaGameObject, new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), this.gameObject.transform);
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
                 EditorUtility.SetDirty(instantiateBuffer);
@@ -302,10 +301,10 @@ public class EditorGridField : MonoBehaviour
 
     public void ClearGrid()
     {
-        for (int i = this.transform.childCount; i > 0; --i)
+        for (int i = transform.childCount; i > 0; --i)
         {
-            GameObject.DestroyImmediate(this.gameObject.transform.GetChild(0).gameObject);
-            Debug.Log(this.gameObject.transform.childCount);
+            GameObject.DestroyImmediate(gameObject.transform.GetChild(0).gameObject);
+            Debug.Log(gameObject.transform.childCount);
         }
     }
 }
