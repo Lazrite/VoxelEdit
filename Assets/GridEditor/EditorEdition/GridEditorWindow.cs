@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEditor.SceneManagement;
 using UnityEngine;
@@ -148,3 +150,5 @@ public class GridEditorWindow : EditorWindow
     }
 
 }
+
+#endif // UNITY_EDITOR

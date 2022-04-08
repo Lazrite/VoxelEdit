@@ -1,3 +1,4 @@
+#if UNITY_EDITOR
 using UnityEditor;
 using UnityEngine;
 
@@ -47,6 +48,15 @@ public class CreateGridOBJ : Editor
             ed.InstantiateGridField();
         }
 
+        EditorGUI.BeginChangeCheck();
+
+        ed.transform.position = EditorGUILayout.Vector3Field("オブジェクト位置", ed.transform.position);
+
+        if (EditorGUI.EndChangeCheck())
+        {
+
+        }
+
     }
 
     private void OnDisable()
@@ -54,3 +64,5 @@ public class CreateGridOBJ : Editor
         EditorUtility.SetDirty(target);
     }
 }
+
+#endif // UNITY EDITOR

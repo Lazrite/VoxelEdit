@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEngine;
 
@@ -40,7 +42,7 @@ public class EditorGridField : MonoBehaviour
             {
                 for (int k = 0; k < size.y; k++)
                 {
-                    gridPosFromIndexMultiple[j, k, i] = new Vector3(0.5f + j, 0.5f + k, 0.5f + i);
+                    gridPosFromIndexMultiple[j, k, i] = new Vector3(this.transform.position.x + 0.5f + j, this.transform.position.y + 0.5f + k, this.transform.position.z + 0.5f + i);
                 }
             }
         }
@@ -308,3 +310,5 @@ public class EditorGridField : MonoBehaviour
         }
     }
 }
+
+#endif // UNITY_EDITOR

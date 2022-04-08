@@ -53,7 +53,7 @@ public class GridView : MonoBehaviour
         }
 
         //‰½‰ñfor•ª‚ª‰ñ‚Á‚½‚©‚ðƒJƒEƒ“ƒg‚³‚¹‚é
-        int x = 0, y = 0, z = 0;
+        int x = 0, y = 0;
 
         for (int j = 0; j < size.z + 1; j++)
         {

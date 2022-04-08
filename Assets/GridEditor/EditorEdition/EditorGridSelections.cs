@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.EditorTools;
@@ -27,6 +29,8 @@ public class EditorGridSelections : MonoBehaviour
     private int state;
 
     private bool isDrag = false;
+
+    private Object visualizeObj;
 
     // Start is called before the first frame update
     private void Start()
@@ -75,8 +79,29 @@ public class EditorGridSelections : MonoBehaviour
                 if (hit.collider.gameObject.GetComponent<IsVisualizeMesh>() != null)
                 {
                     hit.collider.gameObject.GetComponent<IsVisualizeMesh>().select_flg = true;
+
+                    if (visualizeObj == null && GridEditorWindow.obj != null)
+                    {
+                        visualizeObj = Instantiate(GridEditorWindow.obj,
+                            gridManager.gridPosFromIndex[
+                                hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1],
+                            Quaternion.identity);
+
+                        visualizeObj.name = "visualizeObj";
+                    }
+
+                    if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
+                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                    {
+                        ((GameObject)visualizeObj).transform.position = gridManager.gridPosFromIndex[
+                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
+                    }
                 }
             }
+        }
+        else
+        {
+            DestroyImmediate(visualizeObj);
         }
 
         switch (selectMode)
@@ -106,7 +131,7 @@ public class EditorGridSelections : MonoBehaviour
 
                         instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                         ((GameObject)instantiateBuffer).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-                        ((GameObject)instantiateBuffer).transform.position = ((GameObject)GridEditorWindow.gridObject).transform.position + new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
+                        ((GameObject)instantiateBuffer).transform.position = new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
 
                         Undo.RecordObject(gridManager, "isPlaced Check");
                         gridManager.isPlaced[index - 1] = true;
@@ -151,14 +176,16 @@ public class EditorGridSelections : MonoBehaviour
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
                     isDrag = true;
+
                     // マウスクリックのホットコントロールを固定
                     GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
                     Event.current.Use();
                 }
 
-                // マウスがドラッグされている場合は以下の処理を実行(マウスクリックダウンのイベントが保存されないためフラグで遷移)
+                // マウスがドラッグされている場合は以下の処理を実行(マウスクリックダウンのイベントは当該フレームでしかアクティブにならないのでフラグで遷移)
                 if (isDrag && toolMode == ToolMode.TOOL_PLACE)
                 {
+                    // マウスが離された場合
                     if (currentEvent.type == EventType.MouseUp ||
                         currentEvent.type == EventType.MouseLeaveWindow && currentEvent.button == 0)
                     {
@@ -196,7 +223,7 @@ public class EditorGridSelections : MonoBehaviour
                         {
                             instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                             ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
-                            ((GameObject)instantiateBuffer).transform.position = ((GameObject)GridEditorWindow.gridObject).transform.position + new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
+                            ((GameObject)instantiateBuffer).transform.position = new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
                             Undo.RecordObject(gridManager, "isPlaced Check");
                             gridManager.isPlaced[index - 1] = true;
                             Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
@@ -297,3 +324,5 @@ public class EditorGridSelections : MonoBehaviour
         return -1;
     }
 }
+
+#endif // UNITY_EDITOR

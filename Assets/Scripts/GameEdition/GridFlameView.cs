@@ -52,7 +52,7 @@ public class GridFlameView : MonoBehaviour
         }
 
         //‰½‰ñfor•ª‚ª‰ñ‚Á‚½‚©‚ğƒJƒEƒ“ƒg‚³‚¹‚é
-        int x = 0, y = 0, z = 0;
+        int x = 0, y = 0;
 
         // ‰¡ü
 

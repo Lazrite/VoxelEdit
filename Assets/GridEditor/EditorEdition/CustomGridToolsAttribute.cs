@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.EditorTools;
@@ -5,27 +7,20 @@ using UnityEngine;
 
 public class CustomGridToolsAttribute : EditorTool
 {
-    private struct TransformAndPositions
-    {
-        public Transform transform;
-        public Vector3[] positions;
-    }
-
-    private IEnumerable<TransformAndPositions> m_Vertices;
-    private GUIContent m_ToolbarIcon;
+    private GUIContent ToolbarIcon;
 
     public override GUIContent toolbarIcon
     {
         get
         {
-            if (m_ToolbarIcon == null)
+            if (ToolbarIcon == null)
             {
-                m_ToolbarIcon = new GUIContent(
+                ToolbarIcon = new GUIContent(
                     AssetDatabase.LoadAssetAtPath<Texture2D>("Assets/GridEditor/EditorTexture/ClickDown.png"),
                     "Grid Visual recognition priority");
             }
 
-            return m_ToolbarIcon;
+            return ToolbarIcon;
         }
     }
 
@@ -52,3 +47,5 @@ public class CustomGridToolsAttribute : EditorTool
 
     }
 }
+
+#endif // UNITY_EDITOR

@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEngine;
 
@@ -33,6 +35,10 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     private void CreateAblePlacement()
     {
+        this.areaGameObject =
+            (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
+                typeof(GameObject));
+
         int surroundBuffer = 0;
 
         for (int i = 0; i < size.x; i++)
@@ -152,6 +158,9 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddPlaceMentArea(int index)
     {
+        this.areaGameObject =
+            (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
+                typeof(GameObject));
         bool isAdd = true;
 
         // Z方向手前がインデックス領域外かどうかを判定
@@ -347,6 +356,10 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddAdJoinPlacement(int index)
     {
+        this.areaGameObject =
+            (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
+                typeof(GameObject));
+
         // Z手前のブロックを確認
         if (index - (size.x * size.y) - 1 >= 0 && index - (size.x * size.y) <= size.x * size.y * size.z)
         {
@@ -515,6 +528,9 @@ public class EditorGenerateAblePlacement : MonoBehaviour
     public void AddSurroundPlacement(int index)
     {
         int buf = 0;
+        this.areaGameObject =
+            (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
+                typeof(GameObject));
 
         // 周囲オブジェクトZ負側
         for (int i = 0; i < size.x * size.y; buf++, i++)
@@ -620,6 +636,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void DeletePlacementArea()
     {
+
         for (int i = 0; i < size.x * size.y * size.z; i++)
         {
             if (gridManager.placedObjects[i])
@@ -718,3 +735,5 @@ public class EditorGenerateAblePlacement : MonoBehaviour
         }
     }
 }
+
+#endif // UNITY_EDITOR

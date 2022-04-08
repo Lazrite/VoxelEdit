@@ -1,3 +1,5 @@
+#if UNITY_EDITOR
+
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEngine;
@@ -29,3 +31,5 @@ internal class CustomGridTools : EditorTool
 
     }
 }
+
+#endif // UNITY_EDITOR
