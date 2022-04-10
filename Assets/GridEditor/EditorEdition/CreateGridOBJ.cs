@@ -54,7 +54,7 @@ public class CreateGridOBJ : Editor
 
         if (EditorGUI.EndChangeCheck())
         {
-
+            ed.ReCalculationGridPos();
         }
 
     }

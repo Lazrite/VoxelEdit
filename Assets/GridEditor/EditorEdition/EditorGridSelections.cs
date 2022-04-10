@@ -6,7 +6,7 @@ using UnityEditor.EditorTools;
 using UnityEngine;
 
 [ExecuteAlways]
-public class EditorGridSelections : MonoBehaviour
+public class EditorGridSelections
 {
     private EditorGridField gridManager;
     private EditorGenerateAblePlacement placementArea = default;
@@ -42,9 +42,6 @@ public class EditorGridSelections : MonoBehaviour
         }
     }
 
-    private void OnDrawGizmos()
-    {
-    }
 
     public void OnScene(SceneView sceneView)
     {
@@ -82,7 +79,7 @@ public class EditorGridSelections : MonoBehaviour
 
                     if (visualizeObj == null && GridEditorWindow.obj != null)
                     {
-                        visualizeObj = Instantiate(GridEditorWindow.obj,
+                        visualizeObj = Object.Instantiate(GridEditorWindow.obj,
                             gridManager.gridPosFromIndex[
                                 hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1],
                             Quaternion.identity);
@@ -90,18 +87,21 @@ public class EditorGridSelections : MonoBehaviour
                         visualizeObj.name = "visualizeObj";
                     }
 
-                    if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                    if (visualizeObj != null)
                     {
-                        ((GameObject)visualizeObj).transform.position = gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
+                        if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
+                                hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                        {
+                            ((GameObject)visualizeObj).transform.position = gridManager.gridPosFromIndex[
+                                hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
+                        }
                     }
                 }
             }
         }
         else
         {
-            DestroyImmediate(visualizeObj);
+            Object.DestroyImmediate(visualizeObj);
         }
 
         switch (selectMode)

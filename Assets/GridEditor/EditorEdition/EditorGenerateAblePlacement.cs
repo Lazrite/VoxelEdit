@@ -23,7 +23,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        gridManager = transform.GetComponent<EditorGridField>();
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
         size = gridManager.size;
     }
 
@@ -35,7 +35,10 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     private void CreateAblePlacement()
     {
-        this.areaGameObject =
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
+
+        areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
 
@@ -158,7 +161,10 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddPlaceMentArea(int index)
     {
-        this.areaGameObject =
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
+
+        areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
         bool isAdd = true;
@@ -356,7 +362,10 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddAdJoinPlacement(int index)
     {
-        this.areaGameObject =
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
+
+        areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
 
@@ -527,8 +536,11 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddSurroundPlacement(int index)
     {
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
+
         int buf = 0;
-        this.areaGameObject =
+        areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
 
@@ -619,6 +631,9 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddCheckedPlacementArea()
     {
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
+
         for (int i = 0; i < size.z; i++)
         {
             for (int j = 0; j < size.x; j++)
@@ -636,6 +651,8 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void DeletePlacementArea()
     {
+        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        size = gridManager.size;
 
         for (int i = 0; i < size.x * size.y * size.z; i++)
         {
