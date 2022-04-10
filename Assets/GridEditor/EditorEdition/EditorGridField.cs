@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System.Runtime.CompilerServices;
 using UnityEditor;
 using UnityEngine;
 
@@ -27,6 +28,9 @@ public class EditorGridField : MonoBehaviour
 
     public void InstantiateGridField()
     {
+        // トランスフォームからの値の編集を禁止
+        this.transform.hideFlags = HideFlags.NotEditable;
+
         isPlaced = new bool[size.x * size.y * size.z];
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
         gridPosFromIndex = new Vector3[size.x * size.y * size.z];
@@ -309,6 +313,35 @@ public class EditorGridField : MonoBehaviour
             Debug.Log(gameObject.transform.childCount);
         }
     }
+
+    public void ReCalculationGridPos()
+    {
+        gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
+        gridPosFromIndex = new Vector3[size.x * size.y * size.z];
+
+        for (int i = 0; i < size.z; i++)
+        {
+            for (int j = 0; j < size.x; j++)
+            {
+                for (int k = 0; k < size.y; k++)
+                {
+                    gridPosFromIndexMultiple[j, k, i] = new Vector3(this.transform.position.x + 0.5f + j, this.transform.position.y + 0.5f + k, this.transform.position.z + 0.5f + i);
+                }
+            }
+        }
+
+        for (int i = 0; i < size.z; i++)
+        {
+            for (int j = 0; j < size.x; j++)
+            {
+                for (int k = 0; k < size.y; k++)
+                {
+                    gridPosFromIndex[(i * size.x * size.y) + (j * size.y) + k] = gridPosFromIndexMultiple[j, k, i];
+                }
+            }
+        }
+    }
+
 }
 
 #endif // UNITY_EDITOR
