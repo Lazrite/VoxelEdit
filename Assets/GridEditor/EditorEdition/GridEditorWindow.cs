@@ -93,6 +93,25 @@ public class GridEditorWindow : EditorWindow
                         editorGridSelections.selectMode = OperationMode.OPERATION_DRAG_FREE;
                     }
                 }
+
+                if (editorGridSelections.selectMode != OperationMode.OPERATION_RANGE)
+                {
+                    texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/RangeSelection.png",
+                        typeof(Texture2D)) as Texture2D;
+                    if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
+                    {
+                        editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                    }
+                }
+                else
+                {
+                    texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/RangeSelection_selected.png",
+                        typeof(Texture2D)) as Texture2D;
+                    if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
+                    {
+                        editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                    }
+                }
             }
 
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
@@ -201,9 +220,7 @@ public class GridEditorWindow : EditorWindow
 
         if (GUILayout.Button(new GUIContent("操作方法についてはこちら")))
         {
-            Process.Start("notepad.exe", "ReadMe.md");
-
-            Help.BrowseURL(url);
+            Process.Start("ReadMe.html");
         }
 
         if (EditorGUI.EndChangeCheck())

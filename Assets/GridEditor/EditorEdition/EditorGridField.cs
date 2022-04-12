@@ -19,7 +19,6 @@ public class EditorGridField : MonoBehaviour
     [HideInInspector] public Vector3[,,] gridPosFromIndexMultiple;
     public Vector3[] gridPosFromIndex;
     public bool[] isPlaced;
-    public GameObject[] VisualizedBuffer;
     public GameObject[] placedObjects;
     public (GameObject[] obj, float[] index) ablePLacementSurround;
 
@@ -34,7 +33,6 @@ public class EditorGridField : MonoBehaviour
         isPlaced = new bool[size.x * size.y * size.z];
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
         gridPosFromIndex = new Vector3[size.x * size.y * size.z];
-        VisualizedBuffer = new GameObject[size.x * size.y * size.z];
         placedObjects = new GameObject[size.x * size.y * size.z];
         ablePLacementSurround.obj = new GameObject[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
         ablePLacementSurround.index = new float[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
@@ -340,6 +338,37 @@ public class EditorGridField : MonoBehaviour
                 }
             }
         }
+    }
+
+    public Vector3Int ReturnGridSquarePoint(int index)
+    {
+        gridPosFromIndex = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>()
+            .gridPosFromIndex;
+        gridPosFromIndexMultiple = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>()
+            .gridPosFromIndexMultiple;
+
+        if (index - 1 < 0)
+        {
+            Debug.Log("不正なインデックスです");
+            return new Vector3Int(-1, -1, -1);
+        }
+
+        for (int i = 0; i < size.z; i++)
+        {
+            for (int j = 0; j < size.x; j++)
+            {
+                for (int k = 0; k < size.y; k++)
+                {
+                    if (gridPosFromIndex[index - 1] == gridPosFromIndexMultiple[j, k, i])
+                    {
+                        return new Vector3Int(j, k, i);
+                    }
+                }
+            }
+        }
+
+        Debug.Log("不正なインデックスです");
+        return new Vector3Int(-1, -1, -1);
     }
 
 }
