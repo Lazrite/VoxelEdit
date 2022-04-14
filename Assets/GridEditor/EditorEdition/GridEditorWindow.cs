@@ -169,7 +169,7 @@ public class GridEditorWindow : EditorWindow
                 
                 if (EditorGUI.EndChangeCheck())
                 {
-                    
+                    ((GameObject)gridObject).GetComponent<EditorGridField>().PreLoadGridInfo();
                 }
 
                 if (gridObject != null)

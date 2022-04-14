@@ -380,7 +380,8 @@ public class EditorGridSelections
                         currentEvent.type == EventType.MouseLeaveWindow && currentEvent.button == 0)
                     {
                         ClearVisualizer();
-                        rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                        if (hit.collider != null)
+                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
                         CreateBoxPlacement(startIndexPos, endIndexPos);
                         isDrag = false;
