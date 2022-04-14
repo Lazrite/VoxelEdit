@@ -1,6 +1,5 @@
 #if UNITY_EDITOR
 
-using System;
 using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.EditorTools;
@@ -54,6 +53,11 @@ public class EditorGridSelections
 
     public void OnScene(SceneView sceneView)
     {
+        if (((GameObject)GridEditorWindow.gridObject) == null)
+        {
+            return;
+        }
+
         if (((GameObject)GridEditorWindow.gridObject) != null)
         {
             gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
@@ -86,15 +90,29 @@ public class EditorGridSelections
             {
                 if (hit.collider.gameObject.GetComponent<IsVisualizeMesh>() != null)
                 {
+
+                    hit.collider.gameObject.GetComponent<IsVisualizeMesh>().select_flg = true;
+
                     // ビジュアライザが生成されてないなら生成
                     if (visualizeObj == null && GridEditorWindow.obj != null && toolMode == ToolMode.TOOL_PLACE)
                     {
-                        if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0)
+                        if (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit, index))
                         {
                             return;
                         }
 
-                        hit.collider.gameObject.GetComponent<IsVisualizeMesh>().select_flg = true;
+                        if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0)
+                        {
+                            Object.DestroyImmediate(visualizeObj);
+                            return;
+                        }
+
+                        if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex < 0 ||
+                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
+                            gridManager.size.x * gridManager.size.y * gridManager.size.z)
+                        {
+                            return;
+                        }
 
                         visualizeObj = Object.Instantiate(GridEditorWindow.obj,
                             gridManager.gridPosFromIndex[
@@ -104,13 +122,16 @@ public class EditorGridSelections
                         visualizeObj.name = "visualizeObj";
                     }
 
-                    if (toolMode != ToolMode.TOOL_PLACE)
+                    if (toolMode != ToolMode.TOOL_PLACE || (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit, index)))
                     {
                         GameObject.DestroyImmediate(visualizeObj);
                     }
 
                     // ビジュアライザが生成されていればフォーカスされている位置にビジュアライザを移動
-                    if (visualizeObj != null && !(hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1 <= 0))
+                    if (visualizeObj != null &&
+                        !(hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0 ||
+                          hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
+                          gridManager.size.x * gridManager.size.y * gridManager.size.z))
                     {
                         if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
                                 hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
@@ -141,12 +162,17 @@ public class EditorGridSelections
                             index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
-                        if (index == default || index <= 0)
+                        if (index == default || index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
                         {
                             return;
                         }
 
                         if (GridEditorWindow.obj == null)
+                        {
+                            return;
+                        }
+
+                        if (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit, index))
                         {
                             return;
                         }
@@ -174,7 +200,7 @@ public class EditorGridSelections
                     {
                         if (hit.collider.GetComponent<GridRelatedInfo>() != null)
                         {
-                            index = ConjecturePlacementObjIndex(hit);
+                            index = gridManager.ConjecturePlacementObjIndex(hit);
                         }
 
                         if (index < 1)
@@ -191,11 +217,6 @@ public class EditorGridSelections
                         gridManager.isPlaced[index - 1] = false;
                         gridManager.placedObjects[index - 1] = null;
                         placementArea.AddAdJoinPlacement(index);
-
-                        if (System.Array.IndexOf(gridManager.ablePLacementSurround.index, index) != -1)
-                        {
-                            placementArea.AddSurroundPlacement(index);
-                        }
                     }
                 }
                 break;
@@ -234,7 +255,7 @@ public class EditorGridSelections
                             index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
-                        if (index == default)
+                        if (index == default || index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
                         {
                             return;
                         }
@@ -245,6 +266,11 @@ public class EditorGridSelections
                         }
 
                         if (GridEditorWindow.obj == null)
+                        {
+                            return;
+                        }
+
+                        if (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit, index))
                         {
                             return;
                         }
@@ -292,10 +318,10 @@ public class EditorGridSelections
                     {
                         if (hit.collider.GetComponent<GridRelatedInfo>() != null)
                         {
-                            index = ConjecturePlacementObjIndex(hit);
+                            index = gridManager.ConjecturePlacementObjIndex(hit);
                         }
 
-                        if (index < 1 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
+                        if (index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
                         {
                             return;
                         }
@@ -322,23 +348,24 @@ public class EditorGridSelections
                 // マウスボタンが押されたら
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
-                    isDrag = true;
-
                     // ドラッグ開始の始点インデックスを取得
                     if (hit.collider != null)
                     {
-                        if (toolMode == ToolMode.TOOL_PLACE)
+
+                        if (toolMode == ToolMode.TOOL_PLACE && (hit.collider.GetComponent<GridRelatedInfo>().gridIndex > 0 && hit.collider.GetComponent<GridRelatedInfo>().gridIndex <= gridManager.size.x * gridManager.size.y * gridManager.size.z))
                         {
                             rangeDragStartIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
                         else if (toolMode == ToolMode.TOOL_ERASE)
                         {
-                            rangeDragStartIndex = ConjecturePlacementObjIndex(hit);
+                            rangeDragStartIndex = gridManager.ConjecturePlacementObjIndex(hit);
                         }
 
                         startIndexPos = gridManager.ReturnGridSquarePoint(rangeDragStartIndex);
                     }
 
+                    isDrag = true;
+                    
                     // マウスクリックのホットコントロールを固定
                     GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
                     Event.current.Use();
@@ -371,7 +398,7 @@ public class EditorGridSelections
                             index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
-                        if (index == default)
+                        if (index == default || index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
                         {
                             return;
                         }
@@ -439,7 +466,7 @@ public class EditorGridSelections
                     {
                         if (hit.collider.GetComponent<GridRelatedInfo>() != null)
                         {
-                            index = ConjecturePlacementObjIndex(hit);
+                            index = gridManager.ConjecturePlacementObjIndex(hit);
                         }
 
                         if (index == default)
@@ -467,7 +494,6 @@ public class EditorGridSelections
                             CancelReservationObj();
                             ReservationDeleteObj(startIndexPos, gridManager.ReturnGridSquarePoint(hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
                             indexBuffer = index;
-                            Debug.Log("adad");
                         }
                     }
                 }
@@ -476,38 +502,7 @@ public class EditorGridSelections
         }
     }
 
-    private int ConjecturePlacementObjIndex(RaycastHit hitObj)
-    {
-        var hitAngles = hitObj.collider.transform.eulerAngles;
-        var hitIndex = hitObj.collider.GetComponent<GridRelatedInfo>().gridIndex;
-
-        if (hitAngles == new Vector3(0, 180, 0))
-        {
-            return hitIndex - (gridManager.size.x * gridManager.size.y);
-        }
-        else if (hitAngles == Vector3.zero)
-        {
-            return hitIndex + (gridManager.size.x * gridManager.size.y);
-        }
-        else if (hitAngles == new Vector3(0, 90, 0))
-        {
-            return hitIndex + gridManager.size.y;
-        }
-        else if (hitAngles == new Vector3(0, 270, 0))
-        {
-            return hitIndex - gridManager.size.y;
-        }
-        else if (hitAngles == new Vector3(90, 0, 0))
-        {
-            return hitIndex - 1;
-        }
-        else if (hitAngles == new Vector3(270, 0, 0))
-        {
-            return hitIndex + 1;
-        }
-
-        return -1;
-    }
+    
 
     /// <summary>
     /// 任意のタイミングで全てのビジュアライザを消去するメソッド

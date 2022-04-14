@@ -162,8 +162,16 @@ public class GridEditorWindow : EditorWindow
             {
                 // オブジェクト（シーン内オブジェクト不可）
                 obj = EditorGUILayout.ObjectField("置きたいオブジェクト", obj, typeof(GameObject), false);
-                gridObject =
-                    EditorGUILayout.ObjectField("グリッドオブジェクト", gridObject, typeof(GameObject), true) as GameObject;
+                
+                EditorGUI.BeginChangeCheck();
+
+                gridObject = EditorGUILayout.ObjectField("グリッドオブジェクト", gridObject, typeof(GameObject), true) as GameObject;
+                
+                if (EditorGUI.EndChangeCheck())
+                {
+                    
+                }
+
                 if (gridObject != null)
                 {
                     // オブジェクトの位置
