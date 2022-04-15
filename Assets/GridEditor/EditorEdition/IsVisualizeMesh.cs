@@ -17,10 +17,6 @@ public class IsVisualizeMesh : MonoBehaviour
         select_flg = false;
     }
 
-    private void Update()
-    {
-    }
-
     private void OnRenderObject()
     {
         gameObject.GetComponent<MeshRenderer>().enabled = false;

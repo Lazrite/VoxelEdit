@@ -183,13 +183,12 @@ public class EditorGridSelections
                         ((GameObject)instantiateBuffer).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
                         ((GameObject)instantiateBuffer).transform.position = new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
 
-                        Undo.RecordObject(gridManager, "isPlaced Check");
                         gridManager.isPlaced[index - 1] = true;
                         Undo.RecordObject(gridManager, "Record PlacedObj");
                         gridManager.placedObjects[index - 1] = (GameObject)instantiateBuffer;
                         Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
                         placementArea.AddPlaceMentArea(index);
-                        placementArea.DeletePlacementArea();
+                        placementArea.DeletePlacementArea(index);
                     }
                 }
 
@@ -226,7 +225,7 @@ public class EditorGridSelections
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
                     isDrag = true;
-
+                    indexBuffer = -1;
                     // マウスクリックのホットコントロールを固定
                     GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
                     Event.current.Use();
@@ -243,8 +242,8 @@ public class EditorGridSelections
                         isDrag = false;
                         Undo.IncrementCurrentGroup();
                         placementArea.AddCheckedPlacementArea();
-                        Undo.IncrementCurrentGroup();
-                        placementArea.DeletePlacementArea();
+
+
                         return;
                     }
 
@@ -282,9 +281,10 @@ public class EditorGridSelections
                             ((GameObject)instantiateBuffer).transform.position = new Vector3(gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
                             Undo.RecordObject(gridManager, "isPlaced Check");
                             gridManager.isPlaced[index - 1] = true;
-                            Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
                             gridManager.placedObjects[index - 1] = (GameObject)instantiateBuffer;
                             Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+                            Undo.IncrementCurrentGroup();
+                            placementArea.DeletePlacementArea(index);
                             indexBuffer = index;
                         }
                     }
@@ -365,7 +365,7 @@ public class EditorGridSelections
                     }
 
                     isDrag = true;
-                    
+
                     // マウスクリックのホットコントロールを固定
                     GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
                     Event.current.Use();
@@ -381,14 +381,18 @@ public class EditorGridSelections
                     {
                         ClearVisualizer();
                         if (hit.collider != null)
+                        {
                             rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                        }
+
                         endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
                         CreateBoxPlacement(startIndexPos, endIndexPos);
                         isDrag = false;
                         Undo.IncrementCurrentGroup();
-                        placementArea.AddCheckedPlacementArea();
-                        Undo.IncrementCurrentGroup();
-                        placementArea.DeletePlacementArea();
+                        AddPlacementAndDeleteConjecture(startIndexPos, endIndexPos);
+                        //placementArea.AddCheckedPlacementArea();
+                        //Undo.IncrementCurrentGroup();
+                        //placementArea.DeletePlacementArea();
                         return;
                     }
 
@@ -493,7 +497,7 @@ public class EditorGridSelections
                         if (index != indexBuffer)
                         {
                             CancelReservationObj();
-                            ReservationDeleteObj(startIndexPos, gridManager.ReturnGridSquarePoint(hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
+                            ReservationDeleteObj(startIndexPos, gridManager.ReturnGridSquarePoint(gridManager.ConjecturePlacementObjIndex(hit)));
                             indexBuffer = index;
                         }
                     }
@@ -503,7 +507,7 @@ public class EditorGridSelections
         }
     }
 
-    
+
 
     /// <summary>
     /// 任意のタイミングで全てのビジュアライザを消去するメソッド
@@ -592,9 +596,57 @@ public class EditorGridSelections
                     ((GameObject)instantiateBuffer).transform.position = gridManager.gridPosFromIndexMultiple[rangeStartIndex.x, rangeStartIndex.y, rangeStartIndex.z] + new Vector3((j) * 1.0f, (k) * 1.0f, (i) * 1.0f);
                     Undo.RecordObject(gridManager, "isPlaced Check");
                     gridManager.isPlaced[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k] = true;
-                    Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
                     gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k] = (GameObject)instantiateBuffer;
                     Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+                }
+            }
+        }
+    }
+
+    private void AddPlacementAndDeleteConjecture(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
+    {
+        Vector3Int size = gridManager.size;
+
+        if (rangeStartIndex.x > rangeEndIndex.x)
+        {
+            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
+        }
+
+        if (rangeStartIndex.y > rangeEndIndex.y)
+        {
+            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
+        }
+
+        if (rangeStartIndex.z > rangeEndIndex.z)
+        {
+            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
+        }
+
+        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
+        {
+            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
+            {
+                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
+                {
+                    if (i > 0 && i < rangeEndIndex.z - rangeStartIndex.z && j > 0 &&
+                        j < rangeEndIndex.x - rangeStartIndex.x && k > 0 && k < rangeEndIndex.y - rangeStartIndex.y)
+                    {
+                        continue;
+                    }
+
+                    placementArea.AddPlaceMentArea((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1);
+                }
+            }
+        }
+
+        // 
+        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
+        {
+            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
+            {
+                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
+                {
+                    placementArea.DeletePlacementArea((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1);
                 }
             }
         }
@@ -628,7 +680,7 @@ public class EditorGridSelections
             {
                 for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
                 {
-                    if (gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].transform.parent == null)
+                    if (gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k - 1].transform.parent == null)
                     {
                         continue;
                     }
