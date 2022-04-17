@@ -1,22 +1,12 @@
 using UnityEngine;
 
+/// <summary>
+/// 法線表示クラス(激重)
+/// </summary>
 public class DrawNormal : MonoBehaviour
 {
-    // Start is called before the first frame update
-    private void Start()
-    {
-
-    }
-
-    // Update is called once per frame
-    private void Update()
-    {
-
-    }
-
     private void OnDrawGizmos()
     {
-
         var preColor = Gizmos.color;
         var preMatrix = Gizmos.matrix;
         Gizmos.color = Color.red;

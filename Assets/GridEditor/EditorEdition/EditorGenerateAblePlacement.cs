@@ -23,7 +23,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
     }
 
@@ -35,7 +35,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     private void CreateAblePlacement()
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
 
         areaGameObject =
@@ -161,210 +161,63 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddPlaceMentArea(int index)
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
 
         areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
-        bool isAdd = true;
 
-        // Z方向手前がインデックス領域外かどうかを判定
-        if (index - (size.x * size.y) >= 0 && index - (size.x * size.y) <= size.x * size.y * size.z)
+
+        if (index >= 1 && index <= size.x * size.y * size.z)
         {
-            for (int i = 0; i < size.x; i++)
-            {
-                for (int j = 0; j < size.y; j++)
-                {
-                    if (index == j + (i * size.y) + 1)
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
+            // Z手前
+            instantiateBuffer = Instantiate(areaGameObject,
+                new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                    gridManager.placedObjects[index - 1].transform.position.y,
+                    gridManager.placedObjects[index - 1].transform.position.z - 0.5f), Quaternion.Euler(0, 0, 0),
+                gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - (size.x * size.y);
 
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
+            // Z方向奥
+            instantiateBuffer = Instantiate(areaGameObject,
+                new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                    gridManager.placedObjects[index - 1].transform.position.y,
+                    gridManager.placedObjects[index - 1].transform.position.z + 0.5f), Quaternion.Euler(0, 180, 0), gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + (size.x * size.y);
 
-            if (isAdd && gridManager.placedObjects[index - (size.x * size.y) - 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
-                                gridManager.placedObjects[index - 1].transform.position.y,
-                                gridManager.placedObjects[index - 1].transform.position.z - 0.5f), Quaternion.Euler(0, 0, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - (size.x * size.y);
-            }
-        }
+            // X正方向
+            instantiateBuffer = Instantiate(areaGameObject,
+                new Vector3(gridManager.placedObjects[index - 1].transform.position.x + 0.5f,
+                    gridManager.placedObjects[index - 1].transform.position.y,
+                    gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 270, 0), gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + size.y;
 
-        // Z方向奥がインデックス領域外かどうかを判定
-        if (index + (size.x * size.y) >= 0 && index + (size.x * size.y) <= size.x * size.y * size.z)
-        {
-            isAdd = true;
-
-            for (int i = 0; i < size.x; i++)
-            {
-                for (int j = 0; j < size.y; j++)
-                {
-                    if (index == j + 1 + i + (size.x * size.y * (size.z - 1)))
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
-
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
-
-            if (isAdd && gridManager.placedObjects[index + (size.x * size.y) - 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
-                                gridManager.placedObjects[index - 1].transform.position.y,
-                                gridManager.placedObjects[index - 1].transform.position.z + 0.5f), Quaternion.Euler(0, 180, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + (size.x * size.y);
-            }
-        }
-
-        // X正方向がインデックス領域外かどうかを判定
-        if (index + size.y >= 0 && index + size.y <= size.x * size.y * size.z)
-        {
-            isAdd = true;
-
-            for (int i = 0; i < size.z; i++)
-            {
-                for (int j = 0; j < size.y; j++)
-                {
-                    if (index == j + i * (size.x * size.y) + ((size.x - 1) * size.y) + 1)
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
-
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
-
-            if (isAdd && gridManager.placedObjects[index + size.y - 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x + 0.5f,
-                                gridManager.placedObjects[index - 1].transform.position.y,
-                                gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 270, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + size.y;
-            }
-        }
-
-        // X負方向がインデックス領域外かどうかを判定
-        if (index - size.y >= 0 && index - size.y <= size.x * size.y * size.z)
-        {
-            isAdd = true;
-
-            for (int i = 0; i < size.z; i++)
-            {
-                for (int j = 0; j < size.y; j++)
-                {
-                    if (index == j + i * (size.x * size.y) + 1)
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
-
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
-
-            if (isAdd && gridManager.placedObjects[index - size.y - 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
+            // X負方向
+            instantiateBuffer = Instantiate(areaGameObject,
                 new Vector3(gridManager.placedObjects[index - 1].transform.position.x - 0.5f,
-                            gridManager.placedObjects[index - 1].transform.position.y,
-                            gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 90, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - size.y;
-            }
-        }
+                    gridManager.placedObjects[index - 1].transform.position.y,
+                    gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 90, 0), gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - size.y;
 
-        // Y正方向がインデックス領域外かどうかを判定
-        if (index + 1 >= 0 && index + 1 <= size.x * size.y * size.z)
-        {
-            isAdd = true;
+            // Y正方向
+            instantiateBuffer = Instantiate(areaGameObject,
+                new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                    gridManager.placedObjects[index - 1].transform.position.y + 0.5f,
+                    gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(90, 0, 0), gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + 1;
 
-            for (int i = 0; i < size.z; i++)
-            {
-                for (int j = 0; j < size.x; j++)
-                {
-                    if (index == ((j + 1) * size.y) + i * (size.x * size.y))
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
-
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
-
-            if (isAdd && gridManager.placedObjects[index - 1 + 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
-                                gridManager.placedObjects[index - 1].transform.position.y + 0.5f,
-                                gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(90, 0, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + 1;
-            }
-        }
-
-        // Y負方向がインデックス領域外かどうかを判定
-        if (index - 1 >= 0 && index - 1 <= size.x * size.y * size.z)
-        {
-            isAdd = true;
-
-            for (int i = 0; i < size.z; i++)
-            {
-                for (int j = 0; j < size.x; j++)
-                {
-                    if (index == ((j) * size.y) + (i * size.x * size.y) + 1)
-                    {
-                        isAdd = false;
-                        break;
-                    }
-                }
-
-                if (!isAdd)
-                {
-                    break;
-                }
-            }
-
-            if (isAdd && gridManager.placedObjects[index - 1 - 1] == null)
-            {
-                instantiateBuffer = Instantiate(areaGameObject,
-                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
-                                gridManager.placedObjects[index - 1].transform.position.y - 0.5f,
-                                gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(270, 0, 0), gridManager.placedObjects[index - 1].transform);
-                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - 1;
-            }
+            // Y負方向
+            instantiateBuffer = Instantiate(areaGameObject,
+                new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                    gridManager.placedObjects[index - 1].transform.position.y - 0.5f,
+                    gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(270, 0, 0), gridManager.placedObjects[index - 1].transform);
+            ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - 1;
         }
     }
 
     public void AddAdJoinPlacement(int index)
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
-        size = gridManager.size;
-
         areaGameObject =
             (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuad.prefab",
                 typeof(GameObject));
@@ -387,10 +240,8 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
                 if (!Alreadyinstantiate)
                 {
-                    instantiateBuffer = PrefabUtility.InstantiatePrefab(areaGameObject);
-
                     instantiateBuffer = Instantiate(areaGameObject,
-                    transform.position + new Vector3(gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].x,
+                    new Vector3(gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].x,
                                 gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].y,
                                 gridManager.gridPosFromIndex[index - (size.x * size.y) - 1].z + 0.5f), Quaternion.Euler(0, -180, 0), gridManager.placedObjects[index - (size.x * size.y) - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -417,7 +268,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].x,
+                        new Vector3(gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].x,
                                 gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].y,
                                 gridManager.gridPosFromIndex[index + (size.x * size.y) - 1].z - 0.5f), Quaternion.Euler(0, 0, 0), gridManager.placedObjects[index + (size.x * size.y) - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -444,7 +295,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + size.y - 1].x - 0.5f,
+                        new Vector3(gridManager.gridPosFromIndex[index + size.y - 1].x - 0.5f,
                                 gridManager.gridPosFromIndex[index + size.y - 1].y,
                                 gridManager.gridPosFromIndex[index + size.y - 1].z), Quaternion.Euler(0, 90, 0), gridManager.placedObjects[index + size.y - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -461,7 +312,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
                 foreach (Transform child in gridManager.placedObjects[index - size.y - 1].transform)
                 {
-                    if (child.transform.eulerAngles == new Vector3(0, -90, 0) && child.tag == "AblePlacement")
+                    if (child.transform.eulerAngles == new Vector3(0, 270, 0) && child.tag == "AblePlacement")
                     {
                         Alreadyinstantiate = true;
                         break;
@@ -471,7 +322,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                        transform.position + new Vector3(gridManager.gridPosFromIndex[index - size.y - 1].x + 0.5f,
+                        new Vector3(gridManager.gridPosFromIndex[index - size.y - 1].x + 0.5f,
                                 gridManager.gridPosFromIndex[index - size.y - 1].y,
                                 gridManager.gridPosFromIndex[index - size.y - 1].z), Quaternion.Euler(0, -90, 0), gridManager.placedObjects[index - size.y - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -498,7 +349,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                        transform.position + new Vector3(gridManager.gridPosFromIndex[index + 1 - 1].x,
+                        new Vector3(gridManager.gridPosFromIndex[index + 1 - 1].x,
                                 gridManager.gridPosFromIndex[index + 1 - 1].y - 0.5f,
                                 gridManager.gridPosFromIndex[index + 1 - 1].z), Quaternion.Euler(-90, 0, 0), gridManager.placedObjects[index + 1 - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -525,7 +376,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                 if (!Alreadyinstantiate)
                 {
                     instantiateBuffer = Instantiate(areaGameObject,
-                        transform.position + new Vector3(gridManager.gridPosFromIndex[index - 1 - 1].x,
+                        new Vector3(gridManager.gridPosFromIndex[index - 1 - 1].x,
                                 gridManager.gridPosFromIndex[index - 1 - 1].y + 0.5f,
                                 gridManager.gridPosFromIndex[index - 1 - 1].z), Quaternion.Euler(90, 0, 0), gridManager.placedObjects[index - 1 - 1].transform);
                     ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index;
@@ -536,7 +387,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddSurroundPlacement(int index)
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
 
         int buf = 0;
@@ -631,7 +482,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
 
     public void AddCheckedPlacementArea()
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
 
         for (int i = 0; i < size.z; i++)
@@ -649,107 +500,259 @@ public class EditorGenerateAblePlacement : MonoBehaviour
         }
     }
 
-    public void DeletePlacementArea()
+    public void DeletePlacementArea(int index)
     {
-        gridManager = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
+        gridManager = transform.GetComponent<EditorGridField>();
         size = gridManager.size;
 
-        for (int i = 0; i < size.x * size.y * size.z; i++)
+
+        if (!gridManager.placedObjects[index - 1])
         {
-            if (gridManager.placedObjects[i])
+            return;
+        }
+
+        // Z負方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.NegativeZ))
+        {
+            // Z手前のブロックを確認
+            if (index - (size.x * size.y) > 0 && index - (size.x * size.y) <= size.x * size.y * size.z)
             {
-                // Z手前のブロックを確認
-                if (i - (size.x * size.y) >= 0 && i - (size.x * size.y) <= size.x * size.y * size.z - 1)
+                if (gridManager.placedObjects[index - (size.x * size.y) - 1] != null)
                 {
-                    if (gridManager.placedObjects[i - (size.x * size.y)] != null)
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
                     {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
+                        if (child.transform.eulerAngles != new Vector3(0, 0, 0) || child.tag != "AblePlacement")
                         {
-                            if (child.transform.eulerAngles == new Vector3(0, 0, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
+                            continue;
                         }
-                    }
-                }
-                // Z奥側のブロックを確認
-                if (i + (size.x * size.y) >= 0 && i + (size.x * size.y) <= size.x * size.y * size.z - 1)
-                {
-                    if (gridManager.placedObjects[i + (size.x * size.y)] != null)
-                    {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
-                        {
-                            if (child.transform.eulerAngles == new Vector3(0, 180, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
-                        }
-                    }
-                }
-                // X正方向のブロックを確認
-                if (i + size.y >= 0 && i + size.y <= size.x * size.y * size.z - 1)
-                {
-                    if (gridManager.placedObjects[i + size.y] != null)
-                    {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
-                        {
-                            if (child.transform.eulerAngles == new Vector3(0, -90, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
-                        }
-                    }
-                }
-                // X負方向のブロックを確認
-                if (i - size.y >= 0 && i - size.y <= size.x * size.y * size.z - 1)
-                {
-                    if (gridManager.placedObjects[i - size.y] != null)
-                    {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
-                        {
-                            if (child.transform.eulerAngles == new Vector3(0, 90, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Y正方向のブロックを確認
-                if (i + 1 >= 0 && i + 1 <= size.x * size.y * size.z - 1)
-                {
-                    if (gridManager.placedObjects[i + 1] != null)
-                    {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
-                        {
-                            if (child.transform.eulerAngles == new Vector3(90, 0, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
-                        }
-                    }
-                }
-                // Y負方向のブロックを確認
-                if (i - 1 >= 0 && i - 1 <= size.x * size.y * size.z - 1)
-                {
-                    if (gridManager.placedObjects[i - 1] != null)
-                    {
-                        foreach (Transform child in gridManager.placedObjects[i].transform)
-                        {
-                            if (child.transform.eulerAngles == new Vector3(-90, 0, 0) && child.tag == "AblePlacement")
-                            {
-                                Undo.DestroyObjectImmediate(child.gameObject);
-                                break;
-                            }
-                        }
+
+                        Undo.DestroyObjectImmediate(child.gameObject);
+                        break;
                     }
                 }
             }
         }
+
+        // Z正方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.PositiveZ))
+        {
+            // Z奥側のブロックを確認
+            if (index + (size.x * size.y) > 0 && index + (size.x * size.y) <= size.x * size.y * size.z)
+            {
+                if (gridManager.placedObjects[index + (size.x * size.y) - 1] != null)
+                {
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
+                    {
+                        if (child.transform.eulerAngles != new Vector3(0, 180, 0) || child.tag != "AblePlacement")
+                        {
+                            continue;
+                        }
+
+                        DestroyImmediate(child.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // X正方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.PositiveX))
+        {
+            // X正方向のブロックを確認
+            if (index + size.y > 0 && index + size.y <= size.x * size.y * size.z)
+            {
+                if (gridManager.placedObjects[index + size.y - 1] != null)
+                {
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
+                    {
+                        if (child.transform.eulerAngles != new Vector3(0, 270, 0) || child.tag != "AblePlacement")
+                        {
+                            continue;
+                        }
+
+                        DestroyImmediate(child.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // X負方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.NegativeX))
+        {
+            // X負方向のブロックを確認
+            if (index - size.y > 0 && index - size.y <= size.x * size.y * size.z)
+            {
+                if (gridManager.placedObjects[index - size.y - 1] != null)
+                {
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
+                    {
+                        if (child.transform.eulerAngles != new Vector3(0, 90, 0) || child.tag != "AblePlacement")
+                        {
+                            continue;
+                        }
+
+                        DestroyImmediate(child.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Y正方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.PositiveY))
+        {
+            // Y正方向のブロックを確認
+            if (index + 1 > 0 && index + 1 <= size.x * size.y * size.z)
+            {
+                if (gridManager.placedObjects[index - 1 + 1] != null)
+                {
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
+                    {
+                        if (child.transform.eulerAngles != new Vector3(90, 0, 0) || child.tag != "AblePlacement")
+                        {
+                            continue;
+                        }
+
+                        DestroyImmediate(child.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Y負方向の端に接してない場合
+        if (!gridManager.isCheckGridEdgeFromIndex(index).HasFlag(EdgeOrientation.NegativeY))
+        {
+            // Y負方向のブロックを確認
+            if (index - 1 > 0 && index - 1 <= size.x * size.y * size.z)
+            {
+                if (gridManager.placedObjects[index - 1 - 1] != null)
+                {
+                    foreach (Transform child in gridManager.placedObjects[index - 1].transform)
+                    {
+                        if (child.transform.eulerAngles != new Vector3(270, 0, 0) || child.tag != "AblePlacement")
+                        {
+                            continue;
+                        }
+
+                        DestroyImmediate(child.gameObject);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// 方向を指定して接続面を生成するメソッド。範囲選択モードで利用
+    /// </summary>
+    /// <param name="edge"> どの方向へ生成するか(このEnumは端がどこかという本来の使い方で利用してないので注意) </param>
+    /// <param name="index"> 対象プレハブのグリッド位置 </param>
+    public void AddPlacementDir(EdgeOrientation edge, int index)
+    {
+        EdgeOrientation whereFromEdge = gridManager.isCheckGridEdgeFromIndex(index);
+
+        if (index + size.y > 0 && index + size.y <= size.x * size.y * size.z)
+        {
+            if (edge.HasFlag(EdgeOrientation.PositiveX) && !gridManager.isPlaced[index + size.y - 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x + 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.y,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 270, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + size.y;
+            }
+        }
+
+        if (index - size.y > 0 && index - size.y <= size.x * size.y * size.z)
+        {
+            if (edge.HasFlag(EdgeOrientation.NegativeX) && !gridManager.isPlaced[index - size.y - 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x - 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.y,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(0, 90, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - size.y;
+            }
+        }
+
+        if (index > 0 && index <= size.x * size.y * size.z)
+        {
+            if (index - 1 - 1 < 0)
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y - 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(270, 0, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - 1;
+            }
+            else if (edge.HasFlag(EdgeOrientation.NegativeY) && !gridManager.isPlaced[index - 1 - 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y - 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(270, 0, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index - 1;
+            }
+        }
+
+        if (index > 0 && index <= size.x * size.y * size.z)
+        {
+            if (index - 1 + 1 >= size.x * size.y * size.z)
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y + 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(90, 0, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + 1;
+            }
+            else if (edge.HasFlag(EdgeOrientation.PositiveY) && !gridManager.isPlaced[index - 1 + 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y + 0.5f,
+                        gridManager.placedObjects[index - 1].transform.position.z), Quaternion.Euler(90, 0, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex = index + 1;
+            }
+        }
+
+        if (index - (size.x * size.y) > 0 && index - (size.x * size.y) <= size.x * size.y * size.z)
+        {
+            if (edge.HasFlag(EdgeOrientation.NegativeZ) && !gridManager.isPlaced[index - (size.x * size.y) - 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y,
+                        gridManager.placedObjects[index - 1].transform.position.z - 0.5f),
+                    Quaternion.Euler(0, 0, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex =
+                    index - (size.x * size.y);
+            }
+        }
+
+        if (index + (size.x * size.y) > 0 && index + (size.x * size.y) <= size.x * size.y * size.z)
+        {
+            if (edge.HasFlag(EdgeOrientation.PositiveZ) && !gridManager.isPlaced[index + (size.x * size.y) - 1])
+            {
+                instantiateBuffer = Instantiate(areaGameObject,
+                    new Vector3(gridManager.placedObjects[index - 1].transform.position.x,
+                        gridManager.placedObjects[index - 1].transform.position.y,
+                        gridManager.placedObjects[index - 1].transform.position.z + 0.5f),
+                    Quaternion.Euler(0, 180, 0),
+                    gridManager.placedObjects[index - 1].transform);
+                ((GameObject)instantiateBuffer).GetComponent<GridRelatedInfo>().gridIndex =
+                    index + (size.x * size.y);
+            }
+        }
+
     }
 }
 

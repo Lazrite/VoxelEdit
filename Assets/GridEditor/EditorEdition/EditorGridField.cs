@@ -1,9 +1,53 @@
 #if UNITY_EDITOR
 
+using System;
+using System.ComponentModel;
+using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
+/// <summary>
+/// どの方向が端に面しているかを表す
+/// </summary>
+[Flags]
+public enum EdgeOrientation
+{
+    /// <summary>
+    /// 端でない
+    /// </summary>
+    None = 0,
+    /// <summary>
+    /// X正方向
+    /// </summary>
+    PositiveX = 1,
+    /// <summary>
+    /// Y正方向
+    /// </summary>
+    PositiveY = 2,
+    /// <summary>
+    /// Z正方向
+    /// </summary>
+    PositiveZ = 4,
+    /// <summary>
+    /// X負方向
+    /// </summary>
+    NegativeX = 8,
+    /// <summary>
+    /// Y負方向
+    /// </summary>
+    NegativeY = 16,
+    /// <summary>
+    /// Z負方向
+    /// </summary>
+    NegativeZ = 32,
+}
+
+/// <summary>
+/// グリッドの本体クラス。グリッドを構成する情報は大体ココにある
+/// </summary>
 public class EditorGridField : MonoBehaviour
 {
     private Vector3[] verts;    //ポリゴンの頂点を入れる
@@ -16,25 +60,26 @@ public class EditorGridField : MonoBehaviour
 
     private GameObject instantiateBuffer;
 
-    [HideInInspector] public Vector3[,,] gridPosFromIndexMultiple;
-    public Vector3[] gridPosFromIndex;
-    public bool[] isPlaced;
-    public GameObject[] VisualizedBuffer;
-    public GameObject[] placedObjects;
-    public (GameObject[] obj, float[] index) ablePLacementSurround;
+    [SerializeField] public Vector3[,,] gridPosFromIndexMultiple;
+    [SerializeField] public Vector3[] gridPosFromIndex;
+    [SerializeField] public bool[] isPlaced;
+    [SerializeField] public GameObject[] placedObjects;
+    [SerializeField] public (GameObject[] obj, float[] index) ablePLacementSurround;
 
     // 配列のバッファ
     private int arrayBuffer = 0;
 
+    /// <summary>
+    /// グリッドを形成するのに必要なものの作成
+    /// </summary>
     public void InstantiateGridField()
     {
         // トランスフォームからの値の編集を禁止
-        this.transform.hideFlags = HideFlags.NotEditable;
+        this.gameObject.GetComponent<EditorGridField>().hideFlags = HideFlags.NotEditable;
 
         isPlaced = new bool[size.x * size.y * size.z];
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
         gridPosFromIndex = new Vector3[size.x * size.y * size.z];
-        VisualizedBuffer = new GameObject[size.x * size.y * size.z];
         placedObjects = new GameObject[size.x * size.y * size.z];
         ablePLacementSurround.obj = new GameObject[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
         ablePLacementSurround.index = new float[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
@@ -202,6 +247,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y);
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y);
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -221,6 +267,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -240,6 +287,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i;
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i;
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -259,6 +307,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -278,6 +327,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y));
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y));
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -297,6 +347,7 @@ public class EditorGridField : MonoBehaviour
                 instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), gameObject.transform);
                 instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
                 instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
                 EditorUtility.SetDirty(instantiateBuffer);
                 ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
                 ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
@@ -305,6 +356,9 @@ public class EditorGridField : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// グリッドを一掃して綺麗にするメソッド
+    /// </summary>
     public void ClearGrid()
     {
         for (int i = transform.childCount; i > 0; --i)
@@ -314,6 +368,9 @@ public class EditorGridField : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// グリッドが動いたときに内部のグリッド座標を再計算するメソッド
+    /// </summary>
     public void ReCalculationGridPos()
     {
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
@@ -342,6 +399,310 @@ public class EditorGridField : MonoBehaviour
         }
     }
 
+    public Vector3Int ReturnGridSquarePoint(int index)
+    {
+        gridPosFromIndex = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>()
+            .gridPosFromIndex;
+        gridPosFromIndexMultiple = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>()
+            .gridPosFromIndexMultiple;
+
+        if (index - 1 < 0 || index > size.x * size.y * size.z)
+        {
+            Debug.Log("不正なインデックスです");
+            return new Vector3Int(-1, -1, -1);
+        }
+
+        for (int i = 0; i < size.z; i++)
+        {
+            for (int j = 0; j < size.x; j++)
+            {
+                for (int k = 0; k < size.y; k++)
+                {
+                    if (gridPosFromIndex[index - 1] == gridPosFromIndexMultiple[j, k, i])
+                    {
+                        return new Vector3Int(j, k, i);
+                    }
+                }
+            }
+        }
+
+        Debug.Log("不正なインデックスです");
+        return new Vector3Int(-1, -1, -1);
+    }
+
+    /// <summary>
+    /// レイキャストの情報を基にグリッドの端かどうかを判定します
+    /// このメソッドはグリッド領域外(グリッド端のプレハブの外側)から接触された場合に使用される
+    /// </summary>
+    /// <param name="hit"> レイキャスト情報 </param>
+    /// <param name="index"> グリッドのインデックス </param>
+    /// <returns> 端である場合true, インデックス領域外、端でない場合false </returns>
+    public bool IsCheckGridEdgeFromHit(RaycastHit hit, int index)
+    {
+        size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
+
+        var gridPoint = ReturnGridSquarePoint(ConjecturePlacementObjIndex(hit));
+
+        if (gridPoint == new Vector3(-1, -1, -1))
+        {
+            return false;
+        }
+
+        Vector3 posiXAngle = new Vector3(0, 270, 0);
+        Vector3 posiYAngle = new Vector3(90, 0, 0);
+        Vector3 posiZAngle = new Vector3(0, 180, 0);
+        Vector3 negaXAngle = new Vector3(0, 90, 0);
+        Vector3 negaYAngle = new Vector3(270, 0, 0);
+        Vector3 negaZAngle = new Vector3(0, 0, 0);
+
+        if (gridPoint.x == 0 && hit.collider.transform.eulerAngles == negaXAngle)
+        {
+            return true;
+        }
+        else if (gridPoint.x == size.x - 1 && hit.collider.transform.eulerAngles == posiXAngle)
+        {
+            return true;
+        }
+        else if (gridPoint.y == 0 && hit.collider.transform.eulerAngles == negaYAngle)
+        {
+            return true;
+        }
+        else if (gridPoint.y == size.y - 1 && hit.collider.transform.eulerAngles == posiYAngle)
+        {
+            return true;
+        }
+        else if (gridPoint.z == 0 && hit.collider.transform.eulerAngles == negaZAngle)
+        {
+            return true;
+        }
+        else if (gridPoint.z == size.z - 1 && hit.collider.transform.eulerAngles == posiZAngle)
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// 対象インデックスがどの方向の端と接しているかを判定するメソッド
+    /// </summary>
+    /// <param name="index"> グリッドのインデックス </param>
+    /// <returns> 面している方向 </returns>
+    public EdgeOrientation isCheckGridEdgeFromIndex(int index)
+    {
+        size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
+
+        var gridPoint = ReturnGridSquarePoint(index);
+
+        if (gridPoint == new Vector3(-1, -1, -1))
+        {
+            return EdgeOrientation.None;
+        }
+
+        var edgeFlg = (EdgeOrientation.None, EdgeOrientation.None, EdgeOrientation.None);
+
+        if (gridPoint.x == 0)
+        {
+            edgeFlg.Item1 = EdgeOrientation.NegativeX;
+        }
+        else if (gridPoint.x == size.x - 1)
+        {
+            edgeFlg.Item1 = EdgeOrientation.PositiveX;
+        }
+        if (gridPoint.y == 0)
+        {
+            edgeFlg.Item2 = EdgeOrientation.NegativeY;
+        }
+        else if (gridPoint.y == size.y - 1)
+        {
+            edgeFlg.Item2 = EdgeOrientation.PositiveY;
+        }
+        if (gridPoint.z == 0)
+        {
+            edgeFlg.Item3 = EdgeOrientation.NegativeZ;
+        }
+        else if (gridPoint.z == size.z - 1)
+        {
+            edgeFlg.Item3 = EdgeOrientation.PositiveZ;
+        }
+
+        return edgeFlg.Item1 | edgeFlg.Item2 | edgeFlg.Item3;
+    }
+
+    public int ConjecturePlacementObjIndex(RaycastHit hitObj)
+    {
+        size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
+
+        var hitAngles = hitObj.collider.transform.eulerAngles;
+        var hitIndex = hitObj.collider.GetComponent<GridRelatedInfo>().gridIndex;
+
+        if (hitAngles == new Vector3(0, 180, 0))
+        {
+            return hitIndex - (size.x * size.y);
+        }
+        else if (hitAngles == Vector3.zero)
+        {
+            return hitIndex + (size.x * size.y);
+        }
+        else if (hitAngles == new Vector3(0, 90, 0))
+        {
+            return hitIndex + size.y;
+        }
+        else if (hitAngles == new Vector3(0, 270, 0))
+        {
+            return hitIndex - size.y;
+        }
+        else if (hitAngles == new Vector3(90, 0, 0))
+        {
+            return hitIndex - 1;
+        }
+        else if (hitAngles == new Vector3(270, 0, 0))
+        {
+            return hitIndex + 1;
+        }
+
+        return -1;
+    }
+
+    public void PreLoadGridInfo()
+    {
+        gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
+        ablePLacementSurround.obj = new GameObject[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
+        ablePLacementSurround.index = new float[(size.x * size.y) * 2 + (size.x * size.z) * 2 + (size.y * size.z) * 2];
+
+        for (int i = 0; i < size.z; i++)
+        {
+            for (int j = 0; j < size.x; j++)
+            {
+                for (int k = 0; k < size.y; k++)
+                {
+                    gridPosFromIndexMultiple[j, k, i] = new Vector3(this.transform.position.x + 0.5f + j, this.transform.position.y + 0.5f + k, this.transform.position.z + 0.5f + i);
+                }
+            }
+        }
+
+        int surroundBuffer = 0;
+
+        for (int i = 0; i < size.x; i++)
+        {
+            for (int j = 0; j < size.y; j++)
+            {
+                if (isPlaced[(j + 1) + (i * size.y) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, 0), Quaternion.Euler(0, -180, 0), gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y);
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y);
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+
+        for (int i = 0; i < size.x; i++)
+        {
+            for (int j = 0; j < size.y; j++)
+            {
+                if (isPlaced[(j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1)) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, j + 0.5f, size.z), Quaternion.identity, gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = (j + 1) + (i * size.y) + (size.x * size.y * (size.z - 1));
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+
+        for (int i = 0; i < size.y; i++)
+        {
+            for (int j = 0; j < size.z; j++)
+            {
+                if (isPlaced[(((j * size.x * size.y) + 1) + i) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(0, i + 0.5f, j + 0.5f), Quaternion.Euler(0, -90, 0), gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i;
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i;
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+
+        for (int i = 0; i < size.y; i++)
+        {
+            for (int j = 0; j < size.z; j++)
+            {
+                if (isPlaced[((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1)) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(size.x, i + 0.5f, j + 0.5f), Quaternion.Euler(0, 90, 0), gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = ((j * size.x * size.y) + 1) + i + (size.y * (size.x - 1));
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+
+        for (int i = 0; i < size.x; i++)
+        {
+            for (int j = 0; j < size.z; j++)
+            {
+                if (isPlaced[(((j * (size.x * size.y)) + 1) + (i * size.y)) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, 0, j + 0.5f), Quaternion.Euler(90, 0, 0), gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y));
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y));
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+
+        for (int i = 0; i < size.x; i++)
+        {
+            for (int j = 0; j < size.z; j++)
+            {
+                if (isPlaced[(((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1) - 1])
+                {
+                    continue;
+                }
+
+                instantiateBuffer = Instantiate(areaGameObject, transform.position + new Vector3(i + 0.5f, size.y, j + 0.5f), Quaternion.Euler(-90, 0, 0), gameObject.transform);
+                instantiateBuffer.GetComponent<GridRelatedInfo>().gridIndex = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
+                instantiateBuffer.hideFlags = HideFlags.HideInHierarchy;
+                instantiateBuffer.name = "AblePlacementAround";
+                EditorUtility.SetDirty(instantiateBuffer);
+                ablePLacementSurround.index[surroundBuffer] = (((j * (size.x * size.y)) + 1) + (i * size.y)) + (size.y - 1);
+                ablePLacementSurround.obj[surroundBuffer] = instantiateBuffer;
+                surroundBuffer++;
+            }
+        }
+    }
 }
 
 #endif // UNITY_EDITOR

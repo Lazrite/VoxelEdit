@@ -17,10 +17,6 @@ public class IsVisualizeMesh : MonoBehaviour
         select_flg = false;
     }
 
-    private void Update()
-    {
-    }
-
     private void OnRenderObject()
     {
         gameObject.GetComponent<MeshRenderer>().enabled = false;
@@ -35,11 +31,6 @@ public class IsVisualizeMesh : MonoBehaviour
             editorGrid = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>();
         }
 
-        //if (!editorGrid.isPlaced[this.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
-        //{
-        //    DestroyImmediate(prefab);
-        //}
-
         //フラグがtrueの場合
         if (select_flg)
         {
@@ -47,15 +38,6 @@ public class IsVisualizeMesh : MonoBehaviour
             select_flg = false;
             //オブジェクトの可視化
             gameObject.GetComponent<MeshRenderer>().enabled = true;
-            //if (GridEditorWindow.obj != null && !editorGrid.isPlaced[this.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
-            //{
-            //    prefab = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-            //    ((GameObject)prefab).transform.position = editorGrid.gridPosFromIndex[this.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
-            //    ((GameObject)prefab).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-            //    ((GameObject)prefab).hideFlags = HideFlags.HideInHierarchy;
-            //}
-
-
         }
 
         if (!Application.isPlaying)

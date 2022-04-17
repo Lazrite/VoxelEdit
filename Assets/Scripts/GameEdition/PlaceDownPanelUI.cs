@@ -6,6 +6,7 @@ public enum OperationMode
 {
     OPERATION_CLICK = 0,
     OPERATION_DRAG_FREE,
+    OPERATION_RANGE,
 }
 
 public enum ToolMode
