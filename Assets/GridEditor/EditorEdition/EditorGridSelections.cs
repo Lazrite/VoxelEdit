@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEditor;
 using UnityEditor.EditorTools;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using Object = UnityEngine.Object;
 
 [ExecuteAlways]
@@ -40,8 +41,10 @@ public class EditorGridSelections
     private int rangeDragEndIndex;
     private Vector3Int endIndexPos;
 
-    // Start is called before the first frame update
-    private void Start()
+    /// <summary>
+    /// エディタ上ではStartが呼ばれない(maybe)のでこのメソッドをデリゲートと一緒に呼んでね?
+    /// </summary>
+    public void StartSelectProcess()
     {
         if (((GameObject)GridEditorWindow.gridObject) != null)
         {
@@ -50,7 +53,10 @@ public class EditorGridSelections
         }
     }
 
-
+    /// <summary>
+    /// シーンビューでセレクタを動かすためのメソッド(エディタ上のメインループ)。デリゲートに登録することで利用する。
+    /// </summary>
+    /// <param name="sceneView"> 現在のシーン(デリゲートするので使わない) </param>
     public void OnScene(SceneView sceneView)
     {
         if (((GameObject)GridEditorWindow.gridObject) == null)
@@ -348,6 +354,8 @@ public class EditorGridSelections
                 // マウスボタンが押されたら
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
+                    rangeDragEndIndex = -1;
+
                     // ドラッグ開始の始点インデックスを取得
                     if (hit.collider != null)
                     {
@@ -385,14 +393,16 @@ public class EditorGridSelections
                             rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
+                        if (rangeDragEndIndex == -1)
+                        {
+                            isDrag = false;
+                            return;
+                        }
+
                         endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
                         CreateBoxPlacement(startIndexPos, endIndexPos);
                         isDrag = false;
-                        Undo.IncrementCurrentGroup();
                         AddPlacementAndDeleteConjecture(startIndexPos, endIndexPos);
-                        //placementArea.AddCheckedPlacementArea();
-                        //Undo.IncrementCurrentGroup();
-                        //placementArea.DeletePlacementArea();
                         return;
                     }
 
@@ -437,14 +447,22 @@ public class EditorGridSelections
                         ClearVisualizer();
 
 
+
                         if (hit.collider != null)
                         {
-                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                            rangeDragEndIndex = gridManager.ConjecturePlacementObjIndex(hit);
                             endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
+                        }
+
+                        if (rangeDragEndIndex == -1)
+                        {
+                            isDrag = false;
+                            return;
                         }
 
                         if (endIndexPos == new Vector3Int(-1, -1, -1))
                         {
+                            isDrag = false;
                             return;
                         }
 
@@ -603,6 +621,11 @@ public class EditorGridSelections
         }
     }
 
+    /// <summary>
+    /// 範囲選択モードで設置したオブジェクトに設置可能判定を付与し、不要な設置可能判定を取り除くメソッド
+    /// </summary>
+    /// <param name="rangeStartIndex"> 選択範囲始点 </param>
+    /// <param name="rangeEndIndex"> 選択範囲終点 </param>
     private void AddPlacementAndDeleteConjecture(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
     {
         Vector3Int size = gridManager.size;
@@ -680,6 +703,15 @@ public class EditorGridSelections
             {
                 for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
                 {
+                    if (gridManager.placedObjects[
+                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k - 1] == null || ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                        (i * size.x * size.y) + (j * size.y) + k - 1 < 0 && (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                        (i * size.x * size.y) + (j * size.y) + k - 1 >= size.x * size.y * size.z))
+                    {
+                        continue;
+                    }
+
                     if (gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k - 1].transform.parent == null)
                     {
                         continue;

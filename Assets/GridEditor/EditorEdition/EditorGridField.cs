@@ -1,8 +1,11 @@
 #if UNITY_EDITOR
 
 using System;
+using System.ComponentModel;
 using System.Linq.Expressions;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices.WindowsRuntime;
+using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
 
@@ -42,6 +45,9 @@ public enum EdgeOrientation
     NegativeZ = 32,
 }
 
+/// <summary>
+/// グリッドの本体クラス。グリッドを構成する情報は大体ココにある
+/// </summary>
 public class EditorGridField : MonoBehaviour
 {
     private Vector3[] verts;    //ポリゴンの頂点を入れる
@@ -69,7 +75,7 @@ public class EditorGridField : MonoBehaviour
     public void InstantiateGridField()
     {
         // トランスフォームからの値の編集を禁止
-        this.transform.hideFlags = HideFlags.NotEditable;
+        this.gameObject.GetComponent<EditorGridField>().hideFlags = HideFlags.NotEditable;
 
         isPlaced = new bool[size.x * size.y * size.z];
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];
@@ -350,6 +356,9 @@ public class EditorGridField : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// グリッドを一掃して綺麗にするメソッド
+    /// </summary>
     public void ClearGrid()
     {
         for (int i = transform.childCount; i > 0; --i)
@@ -359,6 +368,9 @@ public class EditorGridField : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// グリッドが動いたときに内部のグリッド座標を再計算するメソッド
+    /// </summary>
     public void ReCalculationGridPos()
     {
         gridPosFromIndexMultiple = new Vector3[size.x, size.y, size.z];

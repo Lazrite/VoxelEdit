@@ -548,7 +548,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                             continue;
                         }
 
-                        Undo.DestroyObjectImmediate(child.gameObject);
+                        DestroyImmediate(child.gameObject);
                         break;
                     }
                 }
@@ -570,7 +570,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                             continue;
                         }
 
-                        Undo.DestroyObjectImmediate(child.gameObject);
+                        DestroyImmediate(child.gameObject);
                         break;
                     }
                 }
@@ -592,7 +592,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                             continue;
                         }
 
-                        Undo.DestroyObjectImmediate(child.gameObject);
+                        DestroyImmediate(child.gameObject);
                         break;
                     }
                 }
@@ -614,7 +614,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                             continue;
                         }
 
-                        Undo.DestroyObjectImmediate(child.gameObject);
+                        DestroyImmediate(child.gameObject);
                         break;
                     }
                 }
@@ -636,7 +636,7 @@ public class EditorGenerateAblePlacement : MonoBehaviour
                             continue;
                         }
 
-                        Undo.DestroyObjectImmediate(child.gameObject);
+                        DestroyImmediate(child.gameObject);
                         break;
                     }
                 }
