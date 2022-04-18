@@ -8,6 +8,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// ‚Ç‚Ì•ûŒü‚ª’[‚É–Ê‚µ‚Ä‚¢‚é‚©‚ð•\‚·
