@@ -13,11 +13,10 @@ GameObject:
   - component: {fileID: 1918787584079139659}
   - component: {fileID: 1918787584079139656}
   - component: {fileID: 3396544889710334601}
-  - component: {fileID: 6391665457968777725}
   - component: {fileID: -1344071123543054806}
-  m_Layer: 6
+  m_Layer: 0
   m_Name: AblePlacementQuad
-  m_TagString: AblePlacement
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -111,19 +110,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 141f45543ee642145b5226ade1382bce, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
---- !u!114 &6391665457968777725
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1918787584079139657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: babe10f830fade441aac291cbbc7a8ea, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  select_flg: 0
 --- !u!114 &-1344071123543054806
 MonoBehaviour:
   m_ObjectHideFlags: 0
