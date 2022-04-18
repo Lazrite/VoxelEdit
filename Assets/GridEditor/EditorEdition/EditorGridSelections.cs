@@ -375,11 +375,6 @@ public class EditorGridSelections
                             return;
                         }
 
-                        if (hit.collider.transform.parent.name == "AblePlacement")
-                        {
-                            return;
-                        }
-
                         if (hit.collider.transform.hideFlags == HideFlags.HideInHierarchy)
                         {
                             return;
@@ -411,7 +406,7 @@ public class EditorGridSelections
                         }
                         else if (toolMode == ToolMode.TOOL_ERASE)
                         {
-                            rangeDragStartIndex = gridManager.ConjecturePlacementObjIndex(hit);
+                            rangeDragStartIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
                         startIndexPos = gridManager.ReturnGridSquarePoint(rangeDragStartIndex);
@@ -447,7 +442,6 @@ public class EditorGridSelections
                         endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
                         CreateBoxPlacement(startIndexPos, endIndexPos);
                         isDrag = false;
-                        AddPlacementAndDeleteConjecture(startIndexPos, endIndexPos);
                         return;
                     }
 
@@ -495,7 +489,7 @@ public class EditorGridSelections
 
                         if (hit.collider != null)
                         {
-                            rangeDragEndIndex = gridManager.ConjecturePlacementObjIndex(hit);
+                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                             endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
                         }
 
@@ -513,15 +507,6 @@ public class EditorGridSelections
 
                         ConfirmDeleteObj(startIndexPos, endIndexPos);
                         isDrag = false;
-                        foreach (var indexList in indexNumList)
-                        {
-                            placementArea.AddAdJoinPlacement(indexList);
-
-                            if (System.Array.IndexOf(gridManager.ablePLacementSurround.index, indexList) != -1)
-                            {
-                                placementArea.AddSurroundPlacement(indexList);
-                            }
-                        }
 
                         indexNumList.Clear();
                         return;
@@ -534,7 +519,7 @@ public class EditorGridSelections
                     {
                         if (hit.collider.GetComponent<GridRelatedInfo>() != null)
                         {
-                            index = gridManager.ConjecturePlacementObjIndex(hit);
+                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
                         }
 
                         if (index == default)
@@ -552,15 +537,10 @@ public class EditorGridSelections
                             return;
                         }
 
-                        if (GridEditorWindow.obj == null)
-                        {
-                            return;
-                        }
-
                         if (index != indexBuffer)
                         {
                             CancelReservationObj();
-                            ReservationDeleteObj(startIndexPos, gridManager.ReturnGridSquarePoint(gridManager.ConjecturePlacementObjIndex(hit)));
+                            ReservationDeleteObj(startIndexPos, gridManager.ReturnGridSquarePoint(hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
                             indexBuffer = index;
                         }
                     }
@@ -653,6 +633,22 @@ public class EditorGridSelections
             {
                 for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
                 {
+                    var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+                    ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
+                    ((GameObject)dummy).transform.position = new Vector3(
+                        gridManager.gridPosFromIndex[
+                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k].x,
+                        gridManager.gridPosFromIndex[
+                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k].y,
+                        gridManager.gridPosFromIndex[
+                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k].z);
+                    ((GameObject)dummy).GetComponent<GridRelatedInfo>().gridIndex = (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1;
+                    //((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                    ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                    Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
 
                     instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                     ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
@@ -750,26 +746,59 @@ public class EditorGridSelections
                 {
                     if (gridManager.placedObjects[
                             (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k - 1] == null || ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k - 1 < 0 && (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k - 1 >= size.x * size.y * size.z))
+                            (i * size.x * size.y) + (j * size.y) + k] == null ||
+                        ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k - 1 < 0 && (rangeStartIndex.z * size.x * size.y) +
+                            (rangeStartIndex.x * size.y) + rangeStartIndex.y +
+                            (i * size.x * size.y) + (j * size.y) + k - 1 >= size.x * size.y * size.z))
                     {
                         continue;
                     }
 
-                    if (gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k - 1].transform.parent == null)
+                    if (gridManager
+                            .placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].transform.parent ==
+                        null)
                     {
                         continue;
                     }
 
-                    Undo.RecordObject(gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                        .GetComponent<MeshRenderer>(), "invisible mesh");
+                    if (!gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.activeSelf)
+                    {
+                        continue;
+                    }
 
-                    gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                        .GetComponent<MeshRenderer>().enabled = false;
+                    if (gridManager.placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y +
+                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
+                            .GetComponent<MeshRenderer>() != null)
+                    {
+                        Undo.RecordObject(gridManager.placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y +
+                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
+                            .GetComponent<MeshRenderer>(), "invisible mesh");
+
+                        gridManager.placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
+                            .GetComponent<MeshRenderer>().enabled = false;
+                    }
+                    else
+                    {
+                        Undo.RecordObject(gridManager.placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y +
+                                (i * size.x * size.y) + (j * size.y) + k].gameObject, "invisible mesh");
+
+                        gridManager.placedObjects[
+                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
+                                rangeStartIndex.y +
+                                (i * size.x * size.y) + (j * size.y) + k].SetActive(false);
+                    }
+
                 }
             }
         }
@@ -787,9 +816,16 @@ public class EditorGridSelections
                 continue;
             }
 
-            if (!placedObject.GetComponent<MeshRenderer>().enabled)
+            if (placedObject.GetComponent<Renderer>() != null)
             {
-                placedObject.GetComponent<MeshRenderer>().enabled = true;
+                if (!placedObject.GetComponent<Renderer>().enabled)
+                {
+                    placedObject.GetComponent<Renderer>().enabled = true;
+                }
+            }
+            else
+            {
+                placedObject.gameObject.SetActive(true);
             }
         }
     }
@@ -800,6 +836,8 @@ public class EditorGridSelections
     private void ConfirmDeleteObj(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
     {
         Vector3Int size = gridManager.size;
+        List<int> deleteIndexList = new List<int>();
+        List<GameObject> dummyObj = new List<GameObject>();
 
         if (rangeStartIndex.x > rangeEndIndex.x)
         {
@@ -827,6 +865,8 @@ public class EditorGridSelections
                         continue;
                     }
 
+                    deleteIndexList.Add((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1);
+
                     Undo.DestroyObjectImmediate(gridManager.placedObjects[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k]);
                     Undo.RecordObject(gridManager, "Delete PlacedFlag");
                     gridManager.isPlaced[(rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k] = false;
@@ -836,6 +876,18 @@ public class EditorGridSelections
                 }
             }
         }
+
+        foreach (Transform child in ((GameObject)GridEditorWindow.gridObject).transform as Transform)
+        {
+            if (child.name != "BlockDummy") continue;
+
+            if (deleteIndexList.Contains(child.GetComponent<GridRelatedInfo>().gridIndex))
+            {
+                Undo.DestroyObjectImmediate(child.gameObject);
+            }
+        }
+
+
     }
 }
 
