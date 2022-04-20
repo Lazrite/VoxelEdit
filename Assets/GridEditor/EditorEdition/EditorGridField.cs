@@ -8,6 +8,7 @@ using System.Runtime.InteropServices.WindowsRuntime;
 using Unity.Collections.LowLevel.Unsafe;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 /// <summary>
 /// どの方向が端に面しているかを表す
@@ -435,47 +436,39 @@ public class EditorGridField : MonoBehaviour
     /// このメソッドはグリッド領域外(グリッド端のプレハブの外側)から接触された場合に使用される
     /// </summary>
     /// <param name="hit"> レイキャスト情報 </param>
-    /// <param name="index"> グリッドのインデックス </param>
     /// <returns> 端である場合true, インデックス領域外、端でない場合false </returns>
-    public bool IsCheckGridEdgeFromHit(RaycastHit hit, int index)
+    public bool IsCheckGridEdgeFromHit(RaycastHit hit)
     {
         size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
 
-        var gridPoint = ReturnGridSquarePoint(ConjecturePlacementObjIndex(hit));
+        var gridPoint = ReturnGridSquarePoint(hit.collider.GetComponent<GridRelatedInfo>().gridIndex);
 
         if (gridPoint == new Vector3(-1, -1, -1))
         {
             return false;
         }
 
-        Vector3 posiXAngle = new Vector3(0, 270, 0);
-        Vector3 posiYAngle = new Vector3(90, 0, 0);
-        Vector3 posiZAngle = new Vector3(0, 180, 0);
-        Vector3 negaXAngle = new Vector3(0, 90, 0);
-        Vector3 negaYAngle = new Vector3(270, 0, 0);
-        Vector3 negaZAngle = new Vector3(0, 0, 0);
-
-        if (gridPoint.x == 0 && hit.collider.transform.eulerAngles == negaXAngle)
+        if (gridPoint.x == 0 && hit.normal == Vector3.left)
         {
             return true;
         }
-        else if (gridPoint.x == size.x - 1 && hit.collider.transform.eulerAngles == posiXAngle)
+        else if (gridPoint.x == size.x - 1 && hit.normal == Vector3.right)
         {
             return true;
         }
-        else if (gridPoint.y == 0 && hit.collider.transform.eulerAngles == negaYAngle)
+        else if (gridPoint.y == 0 && hit.normal == Vector3.down)
         {
             return true;
         }
-        else if (gridPoint.y == size.y - 1 && hit.collider.transform.eulerAngles == posiYAngle)
+        else if (gridPoint.y == size.y - 1 && hit.normal == Vector3.up)
         {
             return true;
         }
-        else if (gridPoint.z == 0 && hit.collider.transform.eulerAngles == negaZAngle)
+        else if (gridPoint.z == 0 && hit.normal == Vector3.back)
         {
             return true;
         }
-        else if (gridPoint.z == size.z - 1 && hit.collider.transform.eulerAngles == posiZAngle)
+        else if (gridPoint.z == size.z - 1 && hit.normal == Vector3.forward)
         {
             return true;
         }
@@ -533,30 +526,30 @@ public class EditorGridField : MonoBehaviour
     {
         size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
 
-        var hitAngles = hitObj.collider.transform.eulerAngles;
+        var hitAngles = hitObj.normal;
         var hitIndex = hitObj.collider.GetComponent<GridRelatedInfo>().gridIndex;
 
-        if (hitAngles == new Vector3(0, 180, 0))
+        if (hitAngles == Vector3.back)
         {
             return hitIndex - (size.x * size.y);
         }
-        else if (hitAngles == Vector3.zero)
+        else if (hitAngles == Vector3.forward)
         {
             return hitIndex + (size.x * size.y);
         }
-        else if (hitAngles == new Vector3(0, 90, 0))
+        else if (hitAngles == Vector3.right)
         {
             return hitIndex + size.y;
         }
-        else if (hitAngles == new Vector3(0, 270, 0))
+        else if (hitAngles == Vector3.left)
         {
             return hitIndex - size.y;
         }
-        else if (hitAngles == new Vector3(90, 0, 0))
+        else if (hitAngles == Vector3.down)
         {
             return hitIndex - 1;
         }
-        else if (hitAngles == new Vector3(270, 0, 0))
+        else if (hitAngles == Vector3.up)
         {
             return hitIndex + 1;
         }

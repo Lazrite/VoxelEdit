@@ -18,12 +18,10 @@ public class CreateGridCase : MonoBehaviour
         {
             if (objall.activeInHierarchy)
             {
-
                 if (Regex.IsMatch(objall.name, "GridObject (.)") || objall.name == "GridObject")
                 {
                     gridObjInCurrentScene++;
                 }
-
             }
         }
 
