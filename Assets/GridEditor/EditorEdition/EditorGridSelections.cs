@@ -108,6 +108,7 @@ public class EditorGridSelections
 
         if (hit.collider == null)
         {
+            Visualizer.DisableRenderer();
             return;
         }
 
@@ -120,64 +121,104 @@ public class EditorGridSelections
         // 内積を利用して手前側のオブジェクトのフォーカスを回避
         if (Vector3.Dot(hit.normal, ray.direction) < 0)
         {
-            if (hit.collider.gameObject.GetComponent<IsVisualizeMesh>() != null)
+            // ビジュアライザが生成されてないなら生成
+            if (Visualizer.prefabVisualizer == null && Visualizer.selectedSurfaceVisualizer == null)
             {
+                Visualizer.CreateVisualizer();
+            }
 
-                hit.collider.gameObject.GetComponent<IsVisualizeMesh>().select_flg = true;
-
-                // ビジュアライザが生成されてないなら生成
-                if (visualizeObj == null && GridEditorWindow.obj != null && toolMode == ToolMode.TOOL_PLACE)
+            if (toolMode == ToolMode.TOOL_PLACE)
+            {
+                if ((Visualizer.prefabVisualizer).transform.position != gridManager.gridPosFromIndex[
+                        hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
                 {
-                    if (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit))
+                    if (hit.collider.name == "AblePlacementAround")
                     {
-                        return;
+                        Visualizer.MoveVisualizerPrefab(hit.transform.position + (hit.normal * 0.5f), Vector3.zero);
                     }
-
-                    if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0)
+                    else if (hit.collider.name == "BlockDummy")
                     {
-                        Object.DestroyImmediate(visualizeObj);
-                        return;
-                    }
-
-                    if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex < 0 ||
-                        hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
-                        gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                    {
-                        return;
-                    }
-
-                    visualizeObj = Object.Instantiate(GridEditorWindow.obj,
-                        gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1],
-                        Quaternion.identity);
-
-                    visualizeObj.name = "visualizeObj";
-                }
-
-                if (toolMode != ToolMode.TOOL_PLACE || (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit)))
-                {
-                    GameObject.DestroyImmediate(visualizeObj);
-                }
-
-                // ビジュアライザが生成されていればフォーカスされている位置にビジュアライザを移動
-                if (visualizeObj != null &&
-                    !(hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0 ||
-                      hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
-                      gridManager.size.x * gridManager.size.y * gridManager.size.z))
-                {
-                    if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
-                    {
-                        ((GameObject)visualizeObj).transform.position = gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
+                        if (!gridManager.IsCheckGridEdgeFromHit(hit))
+                        {
+                            // TODO 直せ
+                            Visualizer.MoveVisualizerPrefab(gridManager.gridPosFromIndex[
+                                gridManager.ConjecturePlacementObjIndex(hit) - 1], Vector3.zero);
+                        }
                     }
                 }
             }
+
+            // 消去モードの時は面に接した部分にサーフェスビジュアライザを生成
+            if (toolMode == ToolMode.TOOL_ERASE)
+            {
+                if ((Visualizer.selectedSurfaceVisualizer).transform.position != gridManager.gridPosFromIndex[
+                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                {
+                    if (hit.collider.name == "AblePlacementAround")
+                    {
+                        Visualizer.MoveVisualizerSurface(hit.transform.position, -hit.normal);
+                    }
+                    else if (hit.collider.name == "BlockDummy")
+                    {
+                        Visualizer.MoveVisualizerSurface(hit.transform.position + (hit.normal * 0.5f), -hit.normal);
+                    }
+                }
+            }
+
+            //if (visualizeObj == null && GridEditorWindow.obj != null && toolMode == ToolMode.TOOL_PLACE)
+            //{
+            //    if (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit))
+            //    {
+            //        return;
+            //    }
+
+            //    if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0)
+            //    {
+            //        Object.DestroyImmediate(visualizeObj);
+            //        return;
+            //    }
+
+            //    if (hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex < 0 ||
+            //        hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
+            //        gridManager.size.x * gridManager.size.y * gridManager.size.z)
+            //    {
+            //        return;
+            //    }
+
+            //    visualizeObj = Object.Instantiate(GridEditorWindow.obj,
+            //        gridManager.gridPosFromIndex[
+            //            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1],
+            //        Quaternion.identity);
+
+            //    visualizeObj.name = "visualizeObj";
+            //}
+
+            //if (toolMode != ToolMode.TOOL_PLACE || (hit.collider.name != "AblePlacementAround" && gridManager.IsCheckGridEdgeFromHit(hit)))
+            //{
+            //    GameObject.DestroyImmediate(visualizeObj);
+            //}
+
+            //// ビジュアライザが生成されていればフォーカスされている位置にビジュアライザを移動
+            //if (visualizeObj != null &&
+            //    !(hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex <= 0 ||
+            //      hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex >
+            //      gridManager.size.x * gridManager.size.y * gridManager.size.z))
+            //{
+            //    if (((GameObject)visualizeObj).transform.position != gridManager.gridPosFromIndex[
+            //            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+            //    {
+            //        ((GameObject)visualizeObj).transform.position = gridManager.gridPosFromIndex[
+            //            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1];
+            //    }
+            //}
+
         }
         else
         {
+            
+
             // フォーカスが外れているならビジュアライザを消去
-            Object.DestroyImmediate(visualizeObj);
+            //Object.DestroyImmediate(visualizeObj);
         }
 
         switch (selectMode)
@@ -207,7 +248,7 @@ public class EditorGridSelections
                             return;
                         }
 
-                        if (gridManager.IsCheckGridEdgeFromHit(hit))
+                        if (gridManager.IsCheckGridEdgeFromHit(hit) && hit.collider.name == "BlockDummy")
                         {
                             return;
                         }
@@ -327,7 +368,7 @@ public class EditorGridSelections
                             return;
                         }
 
-                        if (gridManager.IsCheckGridEdgeFromHit(hit))
+                        if (gridManager.IsCheckGridEdgeFromHit(hit) && hit.collider.name == "BlockDummy")
                         {
                             return;
                         }
@@ -877,17 +918,22 @@ public class EditorGridSelections
             }
         }
 
-        foreach (Transform child in ((GameObject)GridEditorWindow.gridObject).transform as Transform)
+        for (int i = 0; i < ((GameObject)GridEditorWindow.gridObject).transform.childCount;)
         {
-            if (child.name != "BlockDummy") continue;
-
-            if (deleteIndexList.Contains(child.GetComponent<GridRelatedInfo>().gridIndex))
+            if (((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).name != "BlockDummy")
             {
-                Undo.DestroyObjectImmediate(child.gameObject);
+                ++i;
+                continue;
             }
+
+            if (deleteIndexList.Contains(((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).GetComponent<GridRelatedInfo>().gridIndex))
+            {
+                Undo.DestroyObjectImmediate(((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).gameObject);
+                continue;
+            }
+
+            ++i;
         }
-
-
     }
 }
 

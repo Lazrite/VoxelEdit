@@ -441,34 +441,34 @@ public class EditorGridField : MonoBehaviour
     {
         size = ((GameObject)GridEditorWindow.gridObject).GetComponent<EditorGridField>().size;
 
-        var gridPoint = ReturnGridSquarePoint(ConjecturePlacementObjIndex(hit));
+        var gridPoint = ReturnGridSquarePoint(hit.collider.GetComponent<GridRelatedInfo>().gridIndex);
 
         if (gridPoint == new Vector3(-1, -1, -1))
         {
             return false;
         }
 
-        if (gridPoint.x == 0 && hit.normal == Vector3.right)
+        if (gridPoint.x == 0 && hit.normal == Vector3.left)
         {
             return true;
         }
-        else if (gridPoint.x == size.x - 1 && hit.normal == Vector3.left)
+        else if (gridPoint.x == size.x - 1 && hit.normal == Vector3.right)
         {
             return true;
         }
-        else if (gridPoint.y == 0 && hit.normal == Vector3.up)
+        else if (gridPoint.y == 0 && hit.normal == Vector3.down)
         {
             return true;
         }
-        else if (gridPoint.y == size.y - 1 && hit.normal == Vector3.down)
+        else if (gridPoint.y == size.y - 1 && hit.normal == Vector3.up)
         {
             return true;
         }
-        else if (gridPoint.z == 0 && hit.normal == Vector3.forward)
+        else if (gridPoint.z == 0 && hit.normal == Vector3.back)
         {
             return true;
         }
-        else if (gridPoint.z == size.z - 1 && hit.normal == Vector3.back)
+        else if (gridPoint.z == size.z - 1 && hit.normal == Vector3.forward)
         {
             return true;
         }

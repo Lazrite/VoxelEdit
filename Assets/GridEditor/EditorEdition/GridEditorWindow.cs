@@ -70,6 +70,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "クリックモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_CLICK;
+                        Visualizer.DisableRenderer();
                     }
                 }
                 else
@@ -79,6 +80,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "クリックモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_CLICK;
+                        Visualizer.DisableRenderer();
                     }
                 }
 
@@ -89,6 +91,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "フリードラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_DRAG_FREE;
+                        Visualizer.DisableRenderer();
                     }
                 }
                 else
@@ -98,6 +101,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "フリードラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_DRAG_FREE;
+                        Visualizer.DisableRenderer();
                     }
                 }
 
@@ -108,6 +112,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                        Visualizer.DisableRenderer();
                     }
                 }
                 else
@@ -117,6 +122,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                        Visualizer.DisableRenderer();
                     }
                 }
             }
@@ -132,6 +138,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "設置モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.toolMode = ToolMode.TOOL_PLACE;
+                        Visualizer.DisableRenderer();
                     }
                 }
                 else
@@ -141,6 +148,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "設置モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.toolMode = ToolMode.TOOL_PLACE;
+                        Visualizer.DisableRenderer();
                     }
                 }
 
@@ -151,6 +159,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "消去モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.toolMode = ToolMode.TOOL_ERASE;
+                        Visualizer.DisableRenderer();
                     }
                 }
                 else
@@ -160,6 +169,7 @@ public class GridEditorWindow : EditorWindow
                     if (GUILayout.Button(new GUIContent(texture, "消去モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
                         editorGridSelections.toolMode = ToolMode.TOOL_ERASE;
+                        Visualizer.DisableRenderer();
                     }
                 }
 
