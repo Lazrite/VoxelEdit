@@ -50,7 +50,7 @@ public class SelectGridField : MonoBehaviour
 
         switch (placeDownPanelUI.selectMode)
         {
-            case OperationMode.OPERATION_CLICK: // クリックモード
+            case OperationMode.OperationClick: // クリックモード
                 //左クリックされたら
                 if (Input.GetMouseButtonDown(0))
                 {
@@ -102,7 +102,7 @@ public class SelectGridField : MonoBehaviour
                 }
                 break;
 
-            case OperationMode.OPERATION_DRAG_FREE: //ドラッグモード
+            case OperationMode.OperationDragFree: //ドラッグモード
                 if (Input.GetMouseButton(0))
                 {
                     if (hit.collider != null)

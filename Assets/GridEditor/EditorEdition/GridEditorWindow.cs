@@ -63,13 +63,13 @@ public class GridEditorWindow : EditorWindow
             {
                 EditorGUILayout.LabelField("選択モード", GUILayout.Width(64));
 
-                if (editorGridSelections.selectMode != OperationMode.OPERATION_CLICK)
+                if (editorGridSelections.selectMode != OperationMode.OperationClick)
                 {
                     texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/ClickDown.png",
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "クリックモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_CLICK;
+                        editorGridSelections.selectMode = OperationMode.OperationClick;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -79,18 +79,18 @@ public class GridEditorWindow : EditorWindow
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "クリックモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_CLICK;
+                        editorGridSelections.selectMode = OperationMode.OperationClick;
                         Visualizer.DisableRenderer();
                     }
                 }
 
-                if (editorGridSelections.selectMode != OperationMode.OPERATION_DRAG_FREE)
+                if (editorGridSelections.selectMode != OperationMode.OperationDragFree)
                 {
                     texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/DragDown.png",
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "フリードラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_DRAG_FREE;
+                        editorGridSelections.selectMode = OperationMode.OperationDragFree;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -100,18 +100,18 @@ public class GridEditorWindow : EditorWindow
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "フリードラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_DRAG_FREE;
+                        editorGridSelections.selectMode = OperationMode.OperationDragFree;
                         Visualizer.DisableRenderer();
                     }
                 }
 
-                if (editorGridSelections.selectMode != OperationMode.OPERATION_RANGE)
+                if (editorGridSelections.selectMode != OperationMode.OperationRange)
                 {
                     texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/RangeSelection.png",
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                        editorGridSelections.selectMode = OperationMode.OperationRange;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -121,7 +121,7 @@ public class GridEditorWindow : EditorWindow
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "範囲ドラッグモード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.selectMode = OperationMode.OPERATION_RANGE;
+                        editorGridSelections.selectMode = OperationMode.OperationRange;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -131,13 +131,13 @@ public class GridEditorWindow : EditorWindow
             {
                 EditorGUILayout.LabelField("ツールモード", GUILayout.Width(64));
 
-                if (editorGridSelections.toolMode != ToolMode.TOOL_PLACE)
+                if (editorGridSelections.toolMode != ToolMode.ToolPlace)
                 {
                     texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/WriteMode.png",
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "設置モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.toolMode = ToolMode.TOOL_PLACE;
+                        editorGridSelections.toolMode = ToolMode.ToolPlace;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -147,18 +147,18 @@ public class GridEditorWindow : EditorWindow
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "設置モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.toolMode = ToolMode.TOOL_PLACE;
+                        editorGridSelections.toolMode = ToolMode.ToolPlace;
                         Visualizer.DisableRenderer();
                     }
                 }
 
-                if (editorGridSelections.toolMode != ToolMode.TOOL_ERASE)
+                if (editorGridSelections.toolMode != ToolMode.ToolErase)
                 {
                     texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/EraseMode.png",
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "消去モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.toolMode = ToolMode.TOOL_ERASE;
+                        editorGridSelections.toolMode = ToolMode.ToolErase;
                         Visualizer.DisableRenderer();
                     }
                 }
@@ -168,7 +168,28 @@ public class GridEditorWindow : EditorWindow
                         typeof(Texture2D)) as Texture2D;
                     if (GUILayout.Button(new GUIContent(texture, "消去モード"), GUILayout.Width(64), GUILayout.Height(64)))
                     {
-                        editorGridSelections.toolMode = ToolMode.TOOL_ERASE;
+                        editorGridSelections.toolMode = ToolMode.ToolErase;
+                        Visualizer.DisableRenderer();
+                    }
+                }
+
+                if (editorGridSelections.toolMode != ToolMode.ToolReplace)
+                {
+                    texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/ReplacementMode.png",
+                        typeof(Texture2D)) as Texture2D;
+                    if (GUILayout.Button(new GUIContent(texture, "置換モード"), GUILayout.Width(64), GUILayout.Height(64)))
+                    {
+                        editorGridSelections.toolMode = ToolMode.ToolReplace;
+                        Visualizer.DisableRenderer();
+                    }
+                }
+                else
+                {
+                    texture = AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorTexture/ReplacementMode_Selected.png",
+                        typeof(Texture2D)) as Texture2D;
+                    if (GUILayout.Button(new GUIContent(texture, "置換モード"), GUILayout.Width(64), GUILayout.Height(64)))
+                    {
+                        editorGridSelections.toolMode = ToolMode.ToolReplace;
                         Visualizer.DisableRenderer();
                     }
                 }
