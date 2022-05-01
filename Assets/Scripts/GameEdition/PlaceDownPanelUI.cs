@@ -4,15 +4,16 @@ using UnityEngine.UI;
 
 public enum OperationMode
 {
-    OPERATION_CLICK = 0,
-    OPERATION_DRAG_FREE,
-    OPERATION_RANGE,
+    OperationClick = 0,
+    OperationDragFree,
+    OperationRange,
 }
 
 public enum ToolMode
 {
-    TOOL_PLACE,
-    TOOL_ERASE,
+    ToolPlace = 0,
+    ToolErase,
+    ToolReplace,
 }
 
 public class PlaceDownPanelUI : MonoBehaviour
@@ -25,7 +26,7 @@ public class PlaceDownPanelUI : MonoBehaviour
     // Start is called before the first frame update
     private void Start()
     {
-        selectMode = OperationMode.OPERATION_CLICK;
+        selectMode = OperationMode.OperationClick;
         foreach (var button in modeButton)
         {
             button.interactable = true;
@@ -37,15 +38,9 @@ public class PlaceDownPanelUI : MonoBehaviour
         }
     }
 
-    // Update is called once per frame
-    private void Update()
-    {
-
-    }
-
     public void OnSelectClickDown()
     {
-        selectMode = OperationMode.OPERATION_CLICK;
+        selectMode = OperationMode.OperationClick;
         foreach (var button in modeButton)
         {
             button.interactable = true;
@@ -59,7 +54,7 @@ public class PlaceDownPanelUI : MonoBehaviour
 
     public void OnSelectDragDown()
     {
-        selectMode = OperationMode.OPERATION_DRAG_FREE;
+        selectMode = OperationMode.OperationDragFree;
         foreach (var button in modeButton)
         {
             button.interactable = true;

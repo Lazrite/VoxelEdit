@@ -3,6 +3,7 @@
 using System;
 using UnityEditor;
 using UnityEngine;
+using Object = UnityEngine.Object;
 
 [Flags]
 public enum VisualizerType
@@ -18,38 +19,52 @@ public static class Visualizer
     public static GameObject selectedSurfaceVisualizer;
     public static GameObject prefabVisualizer;
 
-
-    public static void CreateVisualizer()
+    /// <summary>
+    /// ビジュアライザを生成するメソッド
+    /// </summary>
+    /// <param name="type"> 生成するビジュアライザのタイプ </param>
+    public static void CreateVisualizer(VisualizerType type = VisualizerType.Prefab | VisualizerType.Surface)
     {
-        // オブジェクトのビジュアライザをロード
-        surfaceObj =
-            (GameObject)AssetDatabase.LoadAssetAtPath("Assets/GridEditor/EditorSource/AblePlacementQuadVisualizer.prefab",
-                typeof(GameObject));
-        placePrefab = (GameObject)GridEditorWindow.obj;
-
-        // ビジュアライザを生成してレンダラーを消す(レンダラーが無いモデルの場合オブジェクトを非アクティブに)
-        selectedSurfaceVisualizer = PrefabUtility.InstantiatePrefab(surfaceObj) as GameObject;
-        if (selectedSurfaceVisualizer != null)
+        if (type.HasFlag(VisualizerType.Surface))
         {
-            selectedSurfaceVisualizer.GetComponent<MeshRenderer>().enabled = false;
-        }
+            // サーフェスオブジェクトのビジュアライザをロード
+            surfaceObj =
+                (GameObject)AssetDatabase.LoadAssetAtPath(
+                    "Assets/GridEditor/EditorSource/AblePlacementQuadVisualizer.prefab",
+                    typeof(GameObject));
 
-
-        prefabVisualizer = PrefabUtility.InstantiatePrefab(placePrefab) as GameObject;
-        if (prefabVisualizer != null)
-        {
-            prefabVisualizer.layer = LayerMask.NameToLayer("Ignore Raycast");
-            if (prefabVisualizer.GetComponent<Renderer>() != null)
+            // ビジュアライザを生成してレンダラーを消す(レンダラーが無いモデルの場合オブジェクトを非アクティブに)
+            selectedSurfaceVisualizer = PrefabUtility.InstantiatePrefab(surfaceObj) as GameObject;
+            if (selectedSurfaceVisualizer != null)
             {
-                prefabVisualizer.GetComponent<Renderer>().enabled = false;
+                selectedSurfaceVisualizer.GetComponent<MeshRenderer>().enabled = false;
             }
-            else
+        }
+        if (type.HasFlag(VisualizerType.Prefab))
+        {
+            placePrefab = (GameObject)GridEditorWindow.obj;
+
+            prefabVisualizer = PrefabUtility.InstantiatePrefab(placePrefab) as GameObject;
+            if (prefabVisualizer != null)
             {
-                prefabVisualizer.SetActive(false);
+                prefabVisualizer.layer = LayerMask.NameToLayer("Ignore Raycast");
+                if (prefabVisualizer.GetComponent<Renderer>() != null)
+                {
+                    prefabVisualizer.GetComponent<Renderer>().enabled = false;
+                }
+                else
+                {
+                    prefabVisualizer.SetActive(false);
+                }
             }
         }
     }
 
+    /// <summary>
+    /// サーフェスビジュアライザを移動させるメソッド
+    /// </summary>
+    /// <param name="pos"> サーフェスビジュアライザの移動先座標 </param>
+    /// <param name="angles"> サーフェスビジュアライザの角度 </param>
     public static void MoveVisualizerSurface(Vector3 pos, Vector3 angles)
     {
         // ビジュアライザのレンダラーが無効の場合オンにする
@@ -62,6 +77,11 @@ public static class Visualizer
         selectedSurfaceVisualizer.transform.rotation = Quaternion.LookRotation(angles);
     }
 
+    /// <summary>
+    /// プレハブのビジュアライザを移動させるメソッド。ビジュアライザが視認不可の場合は可視化する
+    /// </summary>
+    /// <param name="pos"> プレハブの移動先座標 </param>
+    /// <param name="angles"> プレハブの角度 </param>
     public static void MoveVisualizerPrefab(Vector3 pos, Vector3 angles = default)
     {
         if (prefabVisualizer != null && prefabVisualizer.GetComponent<Renderer>() != null)
@@ -77,9 +97,13 @@ public static class Visualizer
         }
 
         prefabVisualizer.transform.position = pos;
-        //角度
+        // TODO 角度を設定できるようにするときにビジュアライザを対応させる
     }
 
+    /// <summary>
+    /// ビジュアライザのレンダラをオフにするメソッド。 モデルプレハブでレンダラーがない場合は非アクティブにする
+    /// </summary>
+    /// <param name="type"></param>
     public static void DisableRenderer(VisualizerType type = VisualizerType.Prefab | VisualizerType.Surface)
     {
         if (type.HasFlag(VisualizerType.Surface))
@@ -106,17 +130,34 @@ public static class Visualizer
         }
     }
 
+    /// <summary>
+    /// ビジュアライザを消去するメソッド
+    /// </summary>
+    /// <param name="type"> 消去するビジュアライザのタイプ(デフォルトでは全て消す) </param>
     public static void DestroyVisualizer(VisualizerType type = VisualizerType.Prefab | VisualizerType.Surface)
     {
-        if (type.HasFlag(VisualizerType.Surface))
+        if (type.HasFlag(VisualizerType.Surface) && surfaceObj != null)
         {
-
+            Object.DestroyImmediate(selectedSurfaceVisualizer);
         }
 
-        if (type.HasFlag(VisualizerType.Prefab))
+        if (type.HasFlag(VisualizerType.Prefab) && prefabVisualizer != null)
         {
-
+            Object.DestroyImmediate(prefabVisualizer);
         }
+    }
+
+    /// <summary>
+    /// アセンブリをロードする前にビジュアライザを消去するメソッド
+    /// </summary>
+    [InitializeOnLoadMethod]
+    public static void PreDestroyVisualizer()
+    {
+        // アセンブリにデリゲート登録
+        AssemblyReloadEvents.beforeAssemblyReload += () =>
+        {
+            DestroyVisualizer();
+        };
     }
 }
 
