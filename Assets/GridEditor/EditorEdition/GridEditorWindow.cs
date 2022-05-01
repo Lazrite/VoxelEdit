@@ -198,8 +198,15 @@ public class GridEditorWindow : EditorWindow
 
             using (new EditorGUILayout.VerticalScope())
             {
+                EditorGUI.BeginChangeCheck();
+
                 // オブジェクト（シーン内オブジェクト不可）
                 obj = EditorGUILayout.ObjectField("置きたいオブジェクト", obj, typeof(GameObject), false);
+
+                if (EditorGUI.EndChangeCheck())
+                {
+                    Visualizer.DestroyVisualizer();
+                }
 
                 EditorGUI.BeginChangeCheck();
 
@@ -207,6 +214,7 @@ public class GridEditorWindow : EditorWindow
 
                 if (EditorGUI.EndChangeCheck())
                 {
+                    Visualizer.DestroyVisualizer();
                     ((GameObject)gridObject).GetComponent<EditorGridField>().PreLoadGridInfo();
                 }
 
