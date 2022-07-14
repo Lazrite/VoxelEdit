@@ -1,5 +1,6 @@
 #if UNITY_EDITOR
 
+using System.Collections.Generic;
 using System.Diagnostics;
 using UnityEditor;
 using UnityEditor.SceneManagement;
@@ -279,6 +280,25 @@ public class GridEditorWindow : EditorWindow
                             ((GameObject)gridObject).GetComponent<EditorGridField>().ClearGrid();
                             ((GameObject)gridObject).GetComponent<EditorGridField>().InstantiateGridField();
                         }
+                    }
+
+                    if (GUILayout.Button(new GUIContent("Jsonにコンバート"), style))
+                    {
+                        List<GameObject> convObj = new List<GameObject>();
+
+                        foreach (GameObject convert in ((GameObject)gridObject).GetComponent<EditorGridField>().placedObjects)
+                        {
+                            if (convert == null)
+                            {
+                                continue;
+                            }
+                            if (convert.name == "BlockDummy" || convert.name == "AblePlacementAround")
+                                continue;
+
+                            convObj.Add(convert);
+                        }
+
+                        ConvertJson.SaveJson(convObj);
                     }
                 }
             }
