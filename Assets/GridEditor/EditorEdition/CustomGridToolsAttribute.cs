@@ -7,8 +7,11 @@ using UnityEngine;
 
 public class CustomGridToolsAttribute : EditorTool
 {
-    private GUIContent ToolbarIcon;
+    private GUIContent ToolbarIcon; // アイコン
 
+    /// <summary>
+    /// ツールバーのアイコン設定
+    /// </summary>
     public override GUIContent toolbarIcon
     {
         get
@@ -24,16 +27,25 @@ public class CustomGridToolsAttribute : EditorTool
         }
     }
 
+    /// <summary>
+    /// 有効になった時
+    /// </summary>
     private void OnEnable()
     {
         ToolManager.activeToolChanged += ActiveToolDidChange;
     }
 
+    /// <summary>
+    /// 無効になった時
+    /// </summary>
     private void OnDisable()
     {
         ToolManager.activeToolChanged -= ActiveToolDidChange;
     }
 
+    /// <summary>
+    /// ツールがアクティブになった時
+    /// </summary>
     private void ActiveToolDidChange()
     {
         if (!ToolManager.IsActiveTool(this))
@@ -42,6 +54,10 @@ public class CustomGridToolsAttribute : EditorTool
         }
     }
 
+    /// <summary>
+    /// ツールがアクティブな場合の挙動
+    /// </summary>
+    /// <param name="window"> 現在のウィンドウ </param>
     public override void OnToolGUI(EditorWindow window)
     {
 
