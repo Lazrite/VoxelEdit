@@ -26,6 +26,7 @@ public class CreateGridOBJ : Editor
         ed.size = EditorGUILayout.Vector3IntField("サイズ", ed.size);
         ed.lineSize = EditorGUILayout.FloatField("線の太さ", ed.lineSize);
 
+        // 不正値入力防止
         if (ed.size.x < 1)
         {
             ed.size.x = 1;
@@ -43,6 +44,8 @@ public class CreateGridOBJ : Editor
 
         if (EditorGUI.EndChangeCheck())
         {
+            // 変更が行われたらグリッドを完全消去
+            // TODO: 保持するように！！
             Undo.RecordObject(ed, "Clear Grid");
             ed.ClearGrid();
             ed.InstantiateGridField();
@@ -51,11 +54,6 @@ public class CreateGridOBJ : Editor
         EditorGUI.BeginChangeCheck();
 
         ed.transform.position = EditorGUILayout.Vector3Field("オブジェクト位置", ed.transform.position);
-
-        if (EditorGUI.EndChangeCheck())
-        {
-            ed.ReCalculationGridPos();
-        }
 
     }
 

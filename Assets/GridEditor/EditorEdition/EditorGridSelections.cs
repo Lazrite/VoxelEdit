@@ -7,6 +7,26 @@ using UnityEditor.EditorTools;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
+/// <summary>
+/// 選択モード用列挙隊
+/// </summary>
+public enum OperationMode
+{
+    OperationClick = 0,
+    OperationDragFree,
+    OperationRange,
+}
+
+/// <summary>
+/// ツールモード用列挙体
+/// </summary>
+public enum ToolMode
+{
+    ToolPlace = 0,
+    ToolErase,
+    ToolReplace,
+}
+
 [ExecuteAlways]
 public class EditorGridSelections
 {
@@ -21,35 +41,42 @@ public class EditorGridSelections
     // グリッドサイズ
     private Vector3Int gridSize;
 
-    // インデックス参照バッファ
-    private int indexBuffer = -1;
-
-    // 消去時の参照リスト
-    private List<int> indexNumList;
-
     // ドラッグしているかどうかのフラグ
     private bool isDrag = false;
 
     // ビジュアライザオブジェクト
     private Object visualizeObj;
 
-    // 範囲ドラッグのインデックス始点
-    private int rangeDragStartIndex;
-    private Vector3Int startIndexPos;
+    // 範囲ドラッグの始点
+    private Vector3 startRangeDrag;
 
-    // 範囲ドラッグのインデックス終点
-    private int rangeDragEndIndex;
-    private Vector3Int endIndexPos;
+    // 範囲ドラッグの終点
+    private Vector3 endRangeDrag;
 
     // ダミーブロックのバッファ
     private GameObject dummyBlock;
 
-    // インデックスの一時退避用
-    private List<int> indexListTmp;
+    // ドラッグ時生成オブジェクト格納リスト
+    private List<GameObject> placedList;
 
-    // ブロック置換予約用リスト
-    private List<(int, GameObject)> replaceReservation;
+    // ドラッグ開始時のクリックで触ったオブジェクトの法線を取得
+    private Vector3 clickedHitNormal;
 
+    // ドラッグ時多重生成防止オブジェクト座標格納リスト
+    private List<Vector3> deniedLMultiPlacedList;
+
+    // ドラッグ時消去防止オブジェクト座標格納リスト
+    private List<Vector3> deniedDestroyObjectList;
+
+    // 選択座標バッファ
+    private Vector3 focusPosBuffer;
+
+    // 消去予約リスト
+    private List<GameObject> deleteReservationList;
+
+    /// <summary>
+    /// コンストラクタ アセットの初期化だけしてる
+    /// </summary>
     public EditorGridSelections()
     {
         dummyBlock =
@@ -75,6 +102,7 @@ public class EditorGridSelections
     /// <param name="sceneView"> 現在のシーン(デリゲートするので使わない) </param>
     public void OnScene(SceneView sceneView)
     {
+        // グリッドオブジェクトがないならreturn
         if (((GameObject)GridEditorWindow.gridObject) == null)
         {
             return;
@@ -94,10 +122,8 @@ public class EditorGridSelections
             return;
         }
 
-        int index = default;
         RaycastHit hit = new RaycastHit();
         Ray ray = HandleUtility.GUIPointToWorldRay(Event.current.mousePosition);
-        int mask = 1 << 6;
 
         var hits = Physics.RaycastAll(ray);
         System.Array.Sort(hits, (x, y) => x.distance.CompareTo(y.distance));
@@ -107,21 +133,38 @@ public class EditorGridSelections
             if (hitObj.collider.name == "AblePlacementAround" || hitObj.collider.name == "BlockDummy")
             {
                 hit = hitObj;
-                Debug.Log(hit);
                 break;
             }
         }
 
+        // 例が何にもあたってなかったらreturn
         if (hit.collider == null)
         {
             Visualizer.DisableRenderer();
             return;
         }
 
-        // フォーカスがグリッドオブジェクト外なら終了
-        if (GridEditorWindow.gridObject != hit.transform.root.gameObject)
+        // フォーカスがグリッドオブジェクト外、或いは起きたいオブジェクトがnullなら終了
+        if (GridEditorWindow.gridObject != hit.transform.root.gameObject && GridEditorWindow.obj == null)
         {
             return;
+        }
+
+        // 設置モードで起きたいオブジェクトがnullならreturn
+        if ((toolMode == ToolMode.ToolPlace || toolMode == ToolMode.ToolReplace) && GridEditorWindow.obj == null)
+        {
+            return;
+        }
+
+        // 範囲外なら設置しない
+        if (hit.collider.name != "AblePlacementAround" && toolMode == ToolMode.ToolPlace)
+        {
+            if (hit.collider.gameObject.transform.position.x < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.x > (gridManager.gridScale * gridManager.size.x) - gridManager.gridScale / 2 ||
+                hit.collider.gameObject.transform.position.y < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.y > (gridManager.gridScale * gridManager.size.y) - gridManager.gridScale / 2 ||
+                hit.collider.gameObject.transform.position.z < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.z > (gridManager.gridScale * gridManager.size.z) - gridManager.gridScale / 2)
+            {
+                return;
+            }
         }
 
         // 内積を利用して手前側のオブジェクトのフォーカスを回避
@@ -138,25 +181,20 @@ public class EditorGridSelections
                 Visualizer.CreateVisualizer(VisualizerType.Prefab);
             }
 
+            // 設置モード時はオブジェクトのビジュアライザを生成
             if (toolMode == ToolMode.ToolPlace)
             {
                 if (Visualizer.prefabVisualizer != null)
                 {
-                    if ((Visualizer.prefabVisualizer).transform.position != gridManager.gridPosFromIndex[
-                            hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                    if (hit.collider.name == "AblePlacementAround")
                     {
-                        if (hit.collider.name == "AblePlacementAround")
-                        {
-                            Visualizer.MoveVisualizerPrefab(hit.transform.position + (hit.normal * 0.5f), Vector3.zero);
-                        }
-                        else if (hit.collider.name == "BlockDummy")
-                        {
-                            if (!gridManager.IsCheckGridEdgeFromHit(hit))
-                            {
-                                Visualizer.MoveVisualizerPrefab(gridManager.gridPosFromIndex[
-                                    gridManager.ConjecturePlacementObjIndex(hit) - 1], Vector3.zero);
-                            }
-                        }
+                        Visualizer.MoveVisualizerPrefab(
+                            hit.transform.position + (hit.normal * gridManager.gridScale / 2), Vector3.zero);
+                    }
+                    else if (hit.collider.name == "BlockDummy")
+                    {
+                        Visualizer.MoveVisualizerPrefab(hit.transform.position + (hit.normal * gridManager.gridScale),
+                            Vector3.zero);
                     }
                 }
             }
@@ -164,20 +202,18 @@ public class EditorGridSelections
             // 消去モードの時は面に接した部分にサーフェスビジュアライザを生成
             if (toolMode == ToolMode.ToolErase)
             {
-                if ((Visualizer.selectedSurfaceVisualizer).transform.position != gridManager.gridPosFromIndex[
-                        hit.collider.gameObject.GetComponent<GridRelatedInfo>().gridIndex - 1])
+                if (hit.collider.name == "AblePlacementAround")
                 {
-                    if (hit.collider.name == "AblePlacementAround")
-                    {
-                        Visualizer.MoveVisualizerSurface(hit.transform.position, -hit.normal);
-                    }
-                    else if (hit.collider.name == "BlockDummy")
-                    {
-                        Visualizer.MoveVisualizerSurface(hit.transform.position + (hit.normal * 0.5f), -hit.normal);
-                    }
+                    Visualizer.MoveVisualizerSurface(hit.transform.position, -hit.normal);
+                }
+                else if (hit.collider.name == "BlockDummy")
+                {
+                    Visualizer.MoveVisualizerSurface((hit.transform.position + hit.normal * gridManager.gridScale / 2),
+                        -hit.normal);
                 }
             }
         }
+
 
         switch (selectMode)
         {
@@ -188,59 +224,53 @@ public class EditorGridSelections
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0 &&
                     toolMode == ToolMode.ToolPlace)
                 {
-                    if (hit.collider != null)
+                    if (hit.collider != null && GridEditorWindow.obj != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null &&
-                            hit.collider.name == "AblePlacementAround")
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-                        else if (hit.collider.GetComponent<GridRelatedInfo>() != null &&
-                                 hit.collider.name == "BlockDummy")
-                        {
-                            index = gridManager.ConjecturePlacementObjIndex(hit);
-                        }
 
-                        if (index == default || index <= 0 ||
-                            index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
+                        Vector3 addPos;
+
+                        // 設置可能オブジェクトに触れてない場合はreturn
+                        if (hit.collider.name != "AblePlacementAround" && hit.collider.name != "BlockDummy")
                         {
                             return;
                         }
-
-                        if (GridEditorWindow.obj == null)
+                        else
                         {
-                            return;
+                            if (hit.collider.name == "AblePlacementAround")
+                            {
+                                addPos = hit.collider.transform.position + (hit.normal * gridManager.gridScale) / 2;
+                            }
+                            else
+                            {
+                                addPos = hit.collider.transform.position + (hit.normal * gridManager.gridScale);
+                            }
                         }
 
-                        if (gridManager.IsCheckGridEdgeFromHit(hit) && hit.collider.name == "BlockDummy")
-                        {
-                            return;
-                        }
-
+                        // アクティブな操作ツールを変更
                         ToolManager.SetActiveTool<CustomGridTools>();
-
-                        var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
-                        ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-                        ((GameObject)dummy).transform.position = new Vector3(gridManager.gridPosFromIndex[index - 1].x,
-                            gridManager.gridPosFromIndex[index - 1].y, gridManager.gridPosFromIndex[index - 1].z);
-                        ((GameObject)dummy).GetComponent<GridRelatedInfo>().gridIndex = index;
-                        //((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
-                        ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
-                        Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
 
                         instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                         ((GameObject)instantiateBuffer).transform.parent =
                             ((GameObject)GridEditorWindow.gridObject).transform;
-                        ((GameObject)instantiateBuffer).transform.position = new Vector3(
-                            gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y,
-                            gridManager.gridPosFromIndex[index - 1].z);
+
+                        ((GameObject)instantiateBuffer).transform.position = Vector3.zero;
+                        ((GameObject)instantiateBuffer).transform.position += addPos;
+
+                        Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
 
                         Undo.RecordObject(gridManager, "isPlaced Check");
-                        gridManager.isPlaced[index - 1] = true;
-                        Undo.RecordObject(gridManager, "Record PlacedObj");
-                        gridManager.placedObjects[index - 1] = (GameObject)instantiateBuffer;
-                        Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+                        gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
+
+                        var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+                        ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
+                        ((GameObject)dummy).transform.position += addPos;
+                        ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                        ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                        ((GameObject)dummy).transform.parent = ((GameObject)instantiateBuffer).transform;
+                        Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
                     }
+
+                    return;
                 }
 
                 // 左クリックされたら:消去モード
@@ -249,28 +279,29 @@ public class EditorGridSelections
                 {
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        if (index < 1)
-                        {
-                            return;
-                        }
-
                         if (hit.collider.name == "AblePlacementAround")
                         {
                             return;
                         }
 
-                        Undo.RecordObject(gridManager, "isDelete Check");
-                        gridManager.isPlaced[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] = false;
-                        Undo.DestroyObjectImmediate(
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1]);
-                        Undo.RecordObject(gridManager, "isDelete Check");
-                        gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] = null;
-                        Undo.DestroyObjectImmediate(hit.collider.transform.gameObject);
+                        // アクティブな操作ツールを変更
+                        ToolManager.SetActiveTool<CustomGridTools>();
+
+                        Undo.RecordObject(gridManager, "isRemoved Check");
+                        gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+
+                        foreach (Transform child in hit.collider.transform)
+                        {
+                            if (child.name == "BlockDummy")
+                            {
+                                Undo.DestroyObjectImmediate(hit.collider.transform.gameObject);
+                            }
+                        }
+
+                        if (hit.collider.name == "BlockDummy")
+                        {
+                            Undo.DestroyObjectImmediate(hit.collider.transform.parent.gameObject);
+                        }
                     }
                 }
 
@@ -280,38 +311,52 @@ public class EditorGridSelections
                 {
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        if (index < 1)
-                        {
-                            return;
-                        }
-
                         if (hit.collider.name == "AblePlacementAround")
                         {
                             return;
                         }
 
+                        // アクティブな操作ツールを変更
+                        ToolManager.SetActiveTool<CustomGridTools>();
+
+                        Vector3 currentPos = hit.collider.transform.position;
+
+                        Undo.RecordObject(gridManager, "isRemoved Check");
+                        gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+
                         // 置換前オブジェクトの消去
-                        Undo.DestroyObjectImmediate(
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1]);
-                        Undo.RecordObject(gridManager, "isDelete Check");
-                        gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] = null;
+                        foreach (Transform child in hit.collider.transform)
+                        {
+                            if (child.name == "BlockDummy")
+                            {
+                                Undo.DestroyObjectImmediate(hit.collider.transform.gameObject);
+                            }
+                        }
+
+                        if (hit.collider.name == "BlockDummy")
+                        {
+                            Undo.DestroyObjectImmediate(hit.collider.transform.parent.gameObject);
+                        }
 
                         // 置換後オブジェクトの生成
                         instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                         ((GameObject)instantiateBuffer).transform.parent =
                             ((GameObject)GridEditorWindow.gridObject).transform;
-                        ((GameObject)instantiateBuffer).transform.position = new Vector3(
-                            gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y,
-                            gridManager.gridPosFromIndex[index - 1].z);
-                        Undo.RecordObject(gridManager, "Record PlacedObj");
-                        gridManager.placedObjects[index - 1] = (GameObject)instantiateBuffer;
+
+                        ((GameObject)instantiateBuffer).transform.position = currentPos;
 
                         Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+
+                        Undo.RecordObject(gridManager, "isPlaced Check");
+                        gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
+
+                        var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+                        ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
+                        ((GameObject)dummy).transform.position = currentPos;
+                        ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                        ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                        ((GameObject)dummy).transform.parent = ((GameObject)instantiateBuffer).transform;
+                        Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
                     }
                 }
 
@@ -326,8 +371,11 @@ public class EditorGridSelections
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
                     isDrag = true;
-                    indexBuffer = -1;
-                    indexListTmp = new List<int>();
+                    deniedDestroyObjectList ??= new List<Vector3>();
+                    deniedLMultiPlacedList ??= new List<Vector3>();
+                    placedList ??= new List<GameObject>();
+                    clickedHitNormal = hit.normal;
+
                     // マウスクリックのホットコントロールを固定
                     GUIUtility.hotControl = GUIUtility.GetControlID(FocusType.Passive);
                     Event.current.Use();
@@ -343,70 +391,67 @@ public class EditorGridSelections
                     {
                         isDrag = false;
 
-                        foreach (var tmp in indexListTmp)
+                        foreach (var tmp in placedList)
                         {
                             var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
                             ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-                            ((GameObject)dummy).transform.position = new Vector3(gridManager.gridPosFromIndex[tmp].x,
-                                gridManager.gridPosFromIndex[tmp].y, gridManager.gridPosFromIndex[tmp].z);
-                            ((GameObject)dummy).GetComponent<GridRelatedInfo>().gridIndex = tmp + 1;
-                            //((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                            ((GameObject)dummy).transform.position = tmp.transform.position;
+                            ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
                             ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                            ((GameObject)dummy).transform.parent = tmp.transform;
                             Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
                         }
 
+                        placedList.Clear();
+                        deniedLMultiPlacedList.Clear();
                         return;
                     }
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null &&
-                            hit.collider.name == "AblePlacementAround")
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-                        else if (hit.collider.GetComponent<GridRelatedInfo>() != null &&
-                                 hit.collider.name == "BlockDummy")
-                        {
-                            index = gridManager.ConjecturePlacementObjIndex(hit);
-                        }
+                        Vector3 addPos;
 
-                        if (index == default || index <= 0 ||
-                            index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
+                        // 設置可能オブジェクトに触れてない場合はreturn
+                        if (hit.collider.name != "AblePlacementAround" && hit.collider.name != "BlockDummy")
                         {
                             return;
                         }
-
-                        if (gridManager.isPlaced[index - 1])
+                        else
                         {
-                            return;
+                            if (hit.collider.name == "AblePlacementAround")
+                            {
+                                addPos = hit.collider.transform.position + (hit.normal * gridManager.gridScale / 2);
+                            }
+                            else
+                            {
+                                addPos = hit.collider.transform.position + (hit.normal * gridManager.gridScale);
+                            }
                         }
 
-                        if (GridEditorWindow.obj == null)
+                        // 既に生成されていたらreturn
+                        foreach (var elem in deniedLMultiPlacedList)
                         {
-                            return;
+                            if (addPos == elem)
+                            {
+                                return;
+                            }
                         }
 
-                        if (gridManager.IsCheckGridEdgeFromHit(hit) && hit.collider.name == "BlockDummy")
-                        {
-                            return;
-                        }
-
-                        if (index != indexBuffer)
+                        // 前回と同じオブジェクトでなければ設置処理
+                        if (hit.collider.gameObject != instantiateBuffer)
                         {
                             ToolManager.SetActiveTool<CustomGridTools>();
 
                             instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                             ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
-                            ((GameObject)instantiateBuffer).transform.position = new Vector3(
-                                gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y,
-                                gridManager.gridPosFromIndex[index - 1].z);
-                            Undo.RecordObject(gridManager, "isPlaced Check");
-                            gridManager.isPlaced[index - 1] = true;
-                            indexListTmp.Add(index - 1);
-                            gridManager.placedObjects[index - 1] = (GameObject)instantiateBuffer;
+                            ((GameObject)instantiateBuffer).transform.position = Vector3.zero;
+                            ((GameObject)instantiateBuffer).transform.position += addPos;
+                            deniedLMultiPlacedList.Add(((GameObject)instantiateBuffer).transform.position);
+                            placedList.Add((GameObject)instantiateBuffer);
                             Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
-                            indexBuffer = index;
+
+                            Undo.RecordObject(gridManager, "isPlaced Check");
+                            gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
                         }
                     }
                 }
@@ -414,66 +459,55 @@ public class EditorGridSelections
                 // 消去モード
                 if (isDrag && toolMode == ToolMode.ToolErase)
                 {
+                    // マウスが離された場合
                     if (currentEvent.type == EventType.MouseUp ||
                         currentEvent.type == EventType.MouseLeaveWindow && currentEvent.button == 0)
                     {
                         isDrag = false;
-
-                        for (int i = 0; i < ((GameObject)GridEditorWindow.gridObject).transform.childCount;)
-                        {
-                            if (((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).name != "BlockDummy")
-                            {
-                                ++i;
-                                continue;
-                            }
-
-                            if (indexListTmp.Contains(((GameObject)GridEditorWindow.gridObject).transform.GetChild(i)
-                                    .GetComponent<GridRelatedInfo>().gridIndex))
-                            {
-                                Undo.DestroyObjectImmediate(((GameObject)GridEditorWindow.gridObject).transform
-                                    .GetChild(i).gameObject);
-                                continue;
-                            }
-
-                            ++i;
-                        }
-
-                        indexNumList.Clear();
+                        deniedDestroyObjectList.Clear();
                     }
 
-                    // リストがnullなら新しく生成
-                    indexNumList ??= new List<int>();
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        if (index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                        {
-                            return;
-                        }
-
                         if (hit.collider.name == "AblePlacementAround")
                         {
                             return;
                         }
 
-                        if (index != indexBuffer &&
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] !=
-                            null)
+                        // 法線の向きが違う場合はreturn
+                        if (clickedHitNormal != hit.normal)
                         {
-                            Undo.RecordObject(gridManager, "isDelete Check");
-                            gridManager.isPlaced[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] = false;
-                            Undo.DestroyObjectImmediate(
-                                gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1]);
-                            Undo.RecordObject(gridManager, "isDelete Check");
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] =
-                                null;
-                            indexListTmp.Add(index);
-                            indexBuffer = index;
+                            return;
+                        }
+
+                        // 消去防止されている座標のオブジェクトを消そうとしている場合はreturn
+                        foreach (var elem in deniedDestroyObjectList)
+                        {
+                            if (hit.collider.transform.position + (hit.normal * gridManager.gridScale) == elem)
+                            {
+                                return;
+                            }
+                        }
+
+                        foreach (Transform child in hit.collider.transform)
+                        {
+                            if (child.name == "BlockDummy")
+                            {
+                                Undo.RecordObject(gridManager, "isRemoved Check");
+                                gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+
+                                deniedDestroyObjectList.Add(hit.collider.transform.position +
+                                                            (hit.normal * gridManager.gridScale));
+                                Undo.DestroyObjectImmediate(hit.collider.transform.gameObject);
+                            }
+                        }
+
+                        if (hit.collider.name == "BlockDummy")
+                        {
+                            Undo.RecordObject(gridManager, "isRemoved Check");
+                            gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+                            Undo.DestroyObjectImmediate(hit.collider.transform.parent.gameObject);
                         }
                     }
                 }
@@ -481,29 +515,15 @@ public class EditorGridSelections
                 // 置換モード
                 if (isDrag && toolMode == ToolMode.ToolReplace)
                 {
+                    // マウスが離されたら
                     if (currentEvent.type == EventType.MouseUp ||
                         currentEvent.type == EventType.MouseLeaveWindow && currentEvent.button == 0)
                     {
                         isDrag = false;
-
-                        indexNumList.Clear();
                     }
-
-                    // リストがnullなら新しく生成
-                    indexNumList ??= new List<int>();
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        if (index <= 0 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                        {
-                            return;
-                        }
-
                         if (hit.collider.name == "AblePlacementAround")
                         {
                             return;
@@ -514,32 +534,52 @@ public class EditorGridSelections
                             return;
                         }
 
-                        if (index != indexBuffer &&
-                            !indexListTmp.Contains(hit.collider.GetComponent<GridRelatedInfo>().gridIndex))
+                        // 前回と同じオブジェクトでなければ設置処理
+                        if (hit.collider.gameObject != instantiateBuffer)
                         {
                             // 置換前オブジェクトの消去
-                            Undo.RecordObject(gridManager, "isDelete Check");
-                            Undo.DestroyObjectImmediate(
-                                gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1]);
-                            Undo.RecordObject(gridManager, "isDelete Check");
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] =
-                                null;
+                            foreach (Transform child in hit.collider.transform)
+                            {
+                                if (child.name == "BlockDummy")
+                                {
+                                    Undo.RecordObject(gridManager, "isRemoved Check");
+                                    gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+                                    Undo.DestroyObjectImmediate(hit.collider.transform.gameObject);
+                                }
+                            }
 
-                            // 置換後オブジェクトの生成
-                            instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-                            ((GameObject)instantiateBuffer).transform.parent =
-                                ((GameObject)GridEditorWindow.gridObject).transform;
-                            ((GameObject)instantiateBuffer).transform.position = new Vector3(
-                                gridManager.gridPosFromIndex[index - 1].x, gridManager.gridPosFromIndex[index - 1].y,
-                                gridManager.gridPosFromIndex[index - 1].z);
-                            Undo.RecordObject(gridManager, "Record PlacedObj");
-                            gridManager.placedObjects[hit.collider.GetComponent<GridRelatedInfo>().gridIndex - 1] =
-                                (GameObject)instantiateBuffer;
-                            Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+                            if (hit.collider.name == "BlockDummy")
+                            {
+                                Undo.RecordObject(gridManager, "isRemoved Check");
+                                gridManager.inGridObjects.Remove(hit.collider.transform.gameObject);
+                                Undo.DestroyObjectImmediate(hit.collider.transform.parent.gameObject);
+                            }
 
-                            indexListTmp.Add(index);
+                            Vector3 currentPos = hit.collider.transform.position;
 
-                            indexBuffer = index;
+                            if (hit.collider.gameObject != instantiateBuffer)
+                            {
+                                // 置換後オブジェクトの生成
+                                instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
+                                ((GameObject)instantiateBuffer).transform.parent =
+                                    ((GameObject)GridEditorWindow.gridObject).transform;
+
+                                ((GameObject)instantiateBuffer).transform.position = currentPos;
+
+                                Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+
+                                Undo.RecordObject(gridManager, "isPlaced Check");
+                                gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
+
+                                var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+                                ((GameObject)dummy).transform.parent =
+                                    ((GameObject)GridEditorWindow.gridObject).transform;
+                                ((GameObject)dummy).transform.position = currentPos;
+                                ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                                ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                                ((GameObject)dummy).transform.parent = ((GameObject)instantiateBuffer).transform;
+                                Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
+                            }
                         }
                     }
                 }
@@ -554,32 +594,29 @@ public class EditorGridSelections
                 // マウスボタンが押されたら
                 if (currentEvent.type == EventType.MouseDown && currentEvent.button == 0)
                 {
-                    rangeDragEndIndex = -1;
-
                     // ドラッグ開始の始点インデックスを取得
                     if (hit.collider != null)
                     {
-                        if (toolMode == ToolMode.ToolPlace &&
-                            (hit.collider.GetComponent<GridRelatedInfo>().gridIndex > 0 &&
-                             hit.collider.GetComponent<GridRelatedInfo>().gridIndex <=
-                             gridManager.size.x * gridManager.size.y * gridManager.size.z))
+                        // 設置モードならブロック設置予定座標
+                        if (toolMode == ToolMode.ToolPlace || toolMode == ToolMode.ToolReplace)
                         {
-                            rangeDragStartIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                            if (hit.collider.name == "AblePlacementAround")
+                            {
+                                startRangeDrag = hit.collider.transform.position +
+                                                 (hit.normal * gridManager.gridScale) / 2;
+                            }
+                            else
+                            {
+                                startRangeDrag = hit.collider.transform.position + (hit.normal * gridManager.gridScale);
+                            }
                         }
-                        else if (toolMode == ToolMode.ToolErase)
+                        else if (toolMode == ToolMode.ToolErase) // 消去モードなら消すブロックの始点
                         {
-                            rangeDragStartIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                            startRangeDrag = hit.collider.transform.position;
                         }
-                        else if (toolMode == ToolMode.ToolReplace &&
-                                 (hit.collider.GetComponent<GridRelatedInfo>().gridIndex > 0 &&
-                                  hit.collider.GetComponent<GridRelatedInfo>().gridIndex <=
-                                  gridManager.size.x * gridManager.size.y * gridManager.size.z))
-                        {
-                            rangeDragStartIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        startIndexPos = gridManager.ReturnGridSquarePoint(rangeDragStartIndex);
                     }
+
+                    deleteReservationList = new List<GameObject>();
 
                     isDrag = true;
 
@@ -597,53 +634,40 @@ public class EditorGridSelections
                         currentEvent.type == EventType.MouseLeaveWindow && currentEvent.button == 0)
                     {
                         ClearVisualizer();
-                        if (hit.collider != null)
+
+                        if (hit.collider.name == "AblePlacementAround")
                         {
-                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
+                            endRangeDrag = hit.collider.transform.position + (hit.normal * gridManager.gridScale) / 2;
+                        }
+                        else
+                        {
+                            endRangeDrag = hit.collider.transform.position + (hit.normal * gridManager.gridScale);
                         }
 
-                        if (rangeDragEndIndex == -1)
-                        {
-                            isDrag = false;
-                            return;
-                        }
+                        CreateBoxPlacement(startRangeDrag,
+                            hit.collider.gameObject.transform.position + (hit.normal * (gridManager.gridScale / 2)));
+                        focusPosBuffer = hit.collider.gameObject.transform.position +
+                                         (hit.normal * (gridManager.gridScale / 2));
 
-                        endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
-                        CreateBoxPlacement(startIndexPos, endIndexPos);
                         isDrag = false;
                         return;
                     }
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
-
-                        if (index == default || index <= 0 ||
-                            index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                        {
-                            return;
-                        }
-
-                        if (gridManager.isPlaced[index - 1])
-                        {
-                            return;
-                        }
-
                         if (GridEditorWindow.obj == null)
                         {
                             return;
                         }
 
-                        if (index != indexBuffer)
+                        if (hit.collider.transform.position + (hit.normal * gridManager.gridScale) != focusPosBuffer)
                         {
                             ClearVisualizer();
-                            CreateVisualizerBox(startIndexPos,
-                                gridManager.ReturnGridSquarePoint(
-                                    hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
-                            indexBuffer = index;
+                            CreteBoxVisualizer(startRangeDrag,
+                                hit.collider.gameObject.transform.position +
+                                (hit.normal * (gridManager.gridScale / 2)));
+                            focusPosBuffer = hit.collider.gameObject.transform.position +
+                                             (hit.normal * (gridManager.gridScale / 2));
                         }
                     }
                 }
@@ -658,63 +682,34 @@ public class EditorGridSelections
                         ClearVisualizer();
 
 
-                        if (hit.collider != null)
-                        {
-                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                            endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
-                        }
-
-                        if (rangeDragEndIndex == -1)
-                        {
-                            isDrag = false;
-                            return;
-                        }
-
-                        if (endIndexPos == new Vector3Int(-1, -1, -1))
-                        {
-                            isDrag = false;
-                            return;
-                        }
-
-                        ConfirmDeleteObj(startIndexPos, endIndexPos);
+                        ConfirmDelete();
                         isDrag = false;
 
-                        indexNumList.Clear();
                         return;
                     }
 
-                    // リストがnullなら新しく生成
-                    indexNumList ??= new List<int>();
+                    ResetReservation();
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
+                        if (hit.collider.transform.position + (hit.normal * gridManager.gridScale) != focusPosBuffer)
                         {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
+                            
+                            Vector3 endRangeGuessPoint;
 
-                        if (index == default)
-                        {
-                            return;
-                        }
+                            if (hit.collider.name == "AblePlacementAround")
+                            {
+                                endRangeGuessPoint = hit.collider.transform.position +
+                                                     (hit.normal * gridManager.gridScale) / 2;
+                            }
+                            else
+                            {
+                                endRangeGuessPoint = hit.collider.transform.position;
+                            }
 
-                        if (index < 1 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                        {
-                            return;
-                        }
-
-                        if (!gridManager.isPlaced[index - 1])
-                        {
-                            return;
-                        }
-
-                        if (index != indexBuffer)
-                        {
-                            CancelReservationObj();
-                            ReservationDeleteObj(startIndexPos,
-                                gridManager.ReturnGridSquarePoint(
-                                    hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
-                            indexBuffer = index;
+                            ReservationDeleteObj(startRangeDrag, endRangeGuessPoint);
+                            focusPosBuffer = hit.collider.gameObject.transform.position +
+                                             (hit.normal * (gridManager.gridScale / 2));
                         }
                     }
                 }
@@ -728,68 +723,34 @@ public class EditorGridSelections
                     {
                         ClearVisualizer();
 
-
-                        if (hit.collider != null)
-                        {
-                            rangeDragEndIndex = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                            endIndexPos = gridManager.ReturnGridSquarePoint(rangeDragEndIndex);
-                        }
-
-                        if (rangeDragEndIndex == -1)
-                        {
-                            isDrag = false;
-                            return;
-                        }
-
-                        if (endIndexPos == new Vector3Int(-1, -1, -1))
-                        {
-                            isDrag = false;
-                            return;
-                        }
-
-                        ConfirmReplaceObj(startIndexPos, endIndexPos);
+                        ConfirmReplace();
                         isDrag = false;
 
-                        indexNumList.Clear();
-                        replaceReservation.Clear();
                         return;
-
-
                     }
 
-                    // リストがnullなら新しく生成
-                    indexNumList ??= new List<int>();
-                    replaceReservation ??= new List<(int, GameObject)>();
+                    ResetReservation();
 
                     if (hit.collider != null)
                     {
-                        if (hit.collider.GetComponent<GridRelatedInfo>() != null)
-                        {
-                            index = hit.collider.GetComponent<GridRelatedInfo>().gridIndex;
-                        }
 
-                        if (index == default)
+                        if (hit.collider.transform.position + (hit.normal * gridManager.gridScale) != focusPosBuffer)
                         {
-                            return;
-                        }
+                            Vector3 endRangeGuessPoint;
 
-                        if (index < 1 || index > gridManager.size.x * gridManager.size.y * gridManager.size.z)
-                        {
-                            return;
-                        }
+                            if (hit.collider.name == "AblePlacementAround")
+                            {
+                                endRangeGuessPoint = hit.collider.transform.position +
+                                                     (hit.normal * gridManager.gridScale) / 2;
+                            }
+                            else
+                            {
+                                endRangeGuessPoint = hit.collider.transform.position;
+                            }
 
-                        if (!gridManager.isPlaced[index - 1])
-                        {
-                            return;
-                        }
-
-                        if (index != indexBuffer)
-                        {
-                            CancelReplaceReservationObj();
-                            ReplaceReservationObj(startIndexPos,
-                                gridManager.ReturnGridSquarePoint(
-                                    hit.collider.GetComponent<GridRelatedInfo>().gridIndex));
-                            indexBuffer = index;
+                            ReservationDeleteObj(startRangeDrag, endRangeGuessPoint);
+                            focusPosBuffer = hit.collider.gameObject.transform.position +
+                                             (hit.normal * (gridManager.gridScale / 2));
                         }
                     }
                 }
@@ -799,7 +760,6 @@ public class EditorGridSelections
             #endregion OPERATION_RANGE
         }
     }
-
 
     /// <summary>
     /// 任意のタイミングで全てのビジュアライザを消去するメソッド
@@ -819,539 +779,212 @@ public class EditorGridSelections
         }
     }
 
-    /// <summary>
-    /// 範囲選択モードの時に選択されていた範囲にビジュアライザを表示するメソッド
-    /// </summary>
-    private void CreateVisualizerBox(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
+    private void CreteBoxVisualizer(Vector3 rangeStart, Vector3 rangeEnd)
     {
-        if (rangeStartIndex.x > rangeEndIndex.x)
+        int signx = 1;
+        int signy = 1;
+        int signz = 1;
+
+        if (rangeStart.x > rangeEnd.x)
         {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
+            (rangeStart.x, rangeEnd.x) = (rangeEnd.x, rangeStart.x);
+            signx = -1;
         }
 
-        if (rangeStartIndex.y > rangeEndIndex.y)
+        if (rangeStart.y > rangeEnd.y)
         {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
+            (rangeStart.y, rangeEnd.y) = (rangeEnd.y, rangeStart.y);
+            signy = -1;
         }
 
-        if (rangeStartIndex.z > rangeEndIndex.z)
+        if (rangeStart.z > rangeEnd.z)
         {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
+            (rangeStart.z, rangeEnd.z) = (rangeEnd.z, rangeStart.z);
+            signz = -1;
         }
 
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
+        for (float i = 0; i < rangeEnd.x - rangeStart.x + gridManager.gridScale; i++)
         {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
+            for (float j = 0; j < rangeEnd.y - rangeStart.y + gridManager.gridScale; j++)
             {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
+                for (float k = 0; k < rangeEnd.z - rangeStart.z + gridManager.gridScale; k++)
                 {
                     instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
                     ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
                     ((GameObject)instantiateBuffer).transform.position =
-                        gridManager.gridPosFromIndexMultiple[rangeStartIndex.x, rangeStartIndex.y, rangeStartIndex.z] +
-                        new Vector3((j) * 1.0f, (k) * 1.0f, (i) * 1.0f);
-                    ((GameObject)instantiateBuffer).name = "visualizeObj";
-                }
-            }
-        }
-    }
-
-    /// <summary>
-    /// 範囲選択モードの時に選択されていた範囲にプレハブを設置するメソッド
-    /// </summary>
-    private void CreateBoxPlacement(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
-    {
-        Vector3Int size = gridManager.size;
-
-        if (rangeStartIndex.x > rangeEndIndex.x)
-        {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
-        }
-
-        if (rangeStartIndex.y > rangeEndIndex.y)
-        {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
-        }
-
-        if (rangeStartIndex.z > rangeEndIndex.z)
-        {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
-        }
-
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
-                    ((GameObject)dummy).transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-                    ((GameObject)dummy).transform.position = new Vector3(
-                        gridManager.gridPosFromIndex[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].x,
-                        gridManager.gridPosFromIndex[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].y,
-                        gridManager.gridPosFromIndex[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].z);
-                    ((GameObject)dummy).GetComponent<GridRelatedInfo>().gridIndex =
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k + 1;
-                    //((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
-                    ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
-                    Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
-
-                    instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-                    ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
-                    ((GameObject)instantiateBuffer).transform.position =
-                        gridManager.gridPosFromIndexMultiple[rangeStartIndex.x, rangeStartIndex.y, rangeStartIndex.z] +
-                        new Vector3((j) * 1.0f, (k) * 1.0f, (i) * 1.0f);
-                    Undo.RecordObject(gridManager, "isPlaced Check");
-                    gridManager.isPlaced[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k] = true;
-                    gridManager.placedObjects[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k] = (GameObject)instantiateBuffer;
+                        new Vector3(signx * i, signy * j, signz * k) + startRangeDrag;
+                    ((GameObject)instantiateBuffer).transform.name = "visualizeObj";
                     Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
                 }
             }
         }
     }
 
-    /// <summary>
-    /// 範囲選択モードで設置したオブジェクトに設置可能判定を付与し、不要な設置可能判定を取り除くメソッド
-    /// </summary>
-    /// <param name="rangeStartIndex"> 選択範囲始点 </param>
-    /// <param name="rangeEndIndex"> 選択範囲終点 </param>
-    private void AddPlacementAndDeleteConjecture(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
+    private void CreateBoxPlacement(Vector3 rangeStart, Vector3 rangeEnd)
     {
-        Vector3Int size = gridManager.size;
+        int signx = 1;
+        int signy = 1;
+        int signz = 1;
 
-        if (rangeStartIndex.x > rangeEndIndex.x)
+        if (rangeStart.x > rangeEnd.x)
         {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
+            (rangeStart.x, rangeEnd.x) = (rangeEnd.x, rangeStart.x);
+            signx = -1;
         }
 
-        if (rangeStartIndex.y > rangeEndIndex.y)
+        if (rangeStart.y > rangeEnd.y)
         {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
+            (rangeStart.y, rangeEnd.y) = (rangeEnd.y, rangeStart.y);
+            signy = -1;
         }
 
-        if (rangeStartIndex.z > rangeEndIndex.z)
+        if (rangeStart.z > rangeEnd.z)
         {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
+            (rangeStart.z, rangeEnd.z) = (rangeEnd.z, rangeStart.z);
+            signz = -1;
         }
 
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
+        for (float i = 0; i < rangeEnd.x - rangeStart.x + gridManager.gridScale; i++)
         {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
+            for (float j = 0; j < rangeEnd.y - rangeStart.y + gridManager.gridScale; j++)
             {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
+                for (float k = 0; k < rangeEnd.z - rangeStart.z + gridManager.gridScale; k++)
                 {
-                    if (i > 0 && i < rangeEndIndex.z - rangeStartIndex.z && j > 0 &&
-                        j < rangeEndIndex.x - rangeStartIndex.x && k > 0 && k < rangeEndIndex.y - rangeStartIndex.y)
+                    foreach (GameObject gameObject in gridManager.inGridObjects)
                     {
-                        continue;
+                        if (gameObject.transform.position == new Vector3(signx * i, signy * j, signz * k) + startRangeDrag)
+                        {
+                            return;
+                        }
+
                     }
 
-                    placementArea.AddPlaceMentArea((rangeStartIndex.z * size.x * size.y) +
-                                                   (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                                                   (i * size.x * size.y) + (j * size.y) + k + 1);
-                }
-            }
-        }
+                    instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
+                    ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
+                    ((GameObject)instantiateBuffer).transform.position =
+                        new Vector3(signx * i, signy * j, signz * k) + startRangeDrag;
+                    Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
 
-        // 
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    placementArea.DeletePlacementArea((rangeStartIndex.z * size.x * size.y) +
-                                                      (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                                                      (i * size.x * size.y) + (j * size.y) + k + 1);
-                }
-            }
-        }
-    }
+                    Undo.RecordObject(gridManager, "isPlaced Check");
+                    gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
 
-    /// <summary>
-    /// 範囲選択時消去予定のオブジェクトのメッシュレンダラーを消すメソッド
-    /// </summary>
-    private void ReservationDeleteObj(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
-    {
-        Vector3Int size = gridManager.size;
-
-        if (rangeStartIndex.x > rangeEndIndex.x)
-        {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
-        }
-
-        if (rangeStartIndex.y > rangeEndIndex.y)
-        {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
-        }
-
-        if (rangeStartIndex.z > rangeEndIndex.z)
-        {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
-        }
-
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    if (gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k] == null ||
-                        ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k - 1 < 0 && (rangeStartIndex.z * size.x * size.y) +
-                            (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k - 1 >= size.x * size.y * size.z))
-                    {
-                        continue;
-                    }
-
-                    if (gridManager
-                            .placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].transform.parent ==
-                        null)
-                    {
-                        continue;
-                    }
-
-                    if (!gridManager
-                            .placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.activeSelf)
-                    {
-                        continue;
-                    }
-
-                    if (gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y +
-                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>() != null)
-                    {
-                        Undo.RecordObject(gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y +
-                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>(), "invisible mesh");
-
-                        gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>().enabled = false;
-                    }
-                    else
-                    {
-                        Undo.RecordObject(gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].gameObject, "invisible mesh");
-
-                        gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].SetActive(false);
-                    }
+                    var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+                    ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+                    ((GameObject)dummy).transform.position =
+                        ((GameObject)instantiateBuffer).transform.position;
+                    ((GameObject)dummy).transform.parent = ((GameObject)instantiateBuffer).transform;
+                    ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+                    Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
                 }
             }
         }
     }
 
-    /// <summary>
-    /// 範囲選択から外れたオブジェクトのメッシュレンダラーをenableにするメソッド
-    /// </summary>
-    private void CancelReservationObj()
+    private void ReservationDeleteObj(Vector3 rangeStart, Vector3 rangeEnd)
     {
-        foreach (var placedObject in gridManager.placedObjects)
+        int signx = 1;
+        int signy = 1;
+        int signz = 1;
+
+        if (rangeStart.x > rangeEnd.x)
         {
-            if (placedObject == null)
+            (rangeStart.x, rangeEnd.x) = (rangeEnd.x, rangeStart.x);
+            signx = -1;
+        }
+
+        if (rangeStart.y > rangeEnd.y)
+        {
+            (rangeStart.y, rangeEnd.y) = (rangeEnd.y, rangeStart.y);
+            signy = -1;
+        }
+
+        if (rangeStart.z > rangeEnd.z)
+        {
+            (rangeStart.z, rangeEnd.z) = (rangeEnd.z, rangeStart.z);
+            signz = -1;
+        }
+
+        foreach (var o in gridManager.inGridObjects)
+        {
+            Vector3 objPos = o.transform.position;
+
+            if (objPos.x >= rangeStart.x - gridManager.gridScale / 2 && objPos.x <= rangeEnd.x + gridManager.gridScale / 2 &&
+                objPos.y >= rangeStart.y - gridManager.gridScale / 2 && objPos.y <= rangeEnd.y + gridManager.gridScale / 2 &&
+                objPos.z >= rangeStart.z - gridManager.gridScale / 2 && objPos.z <= rangeEnd.z + gridManager.gridScale / 2)
+            {
+                Undo.RecordObject(o, "DisVisible");
+                if (o.gameObject.GetComponent<MeshRenderer>() != null)
+                {
+                    o.gameObject.GetComponent<MeshRenderer>().enabled = false;
+                }
+                else
+                {
+                    o.gameObject.SetActive(false);
+                }
+
+                deleteReservationList.Add(o);
+            }
+        }
+    }
+
+    private void ResetReservation()
+    {
+        foreach (var o in deleteReservationList)
+        {
+            if (o.name == "AblePlacementAround")
             {
                 continue;
             }
 
-            if (placedObject.GetComponent<Renderer>() != null)
+            if (o.gameObject.GetComponent<MeshRenderer>() != null)
             {
-                if (!placedObject.GetComponent<Renderer>().enabled)
-                {
-                    placedObject.GetComponent<Renderer>().enabled = true;
-                }
+                o.gameObject.GetComponent<MeshRenderer>().enabled = true;
             }
             else
             {
-                placedObject.gameObject.SetActive(true);
+                o.gameObject.SetActive(true);
             }
         }
+
+        deleteReservationList.Clear();
     }
 
-    /// <summary>
-    /// 消去確定の場合にオブジェクトを消去するメソッド
-    /// </summary>
-    private void ConfirmDeleteObj(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
+    private void ConfirmDelete()
     {
-        Vector3Int size = gridManager.size;
-        List<int> deleteIndexList = new List<int>();
-        List<GameObject> dummyObj = new List<GameObject>();
-
-        if (rangeStartIndex.x > rangeEndIndex.x)
+        for (int i = deleteReservationList.Count; i > 0; i--)
         {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
+            gridManager.inGridObjects.Remove(deleteReservationList[i - 1]);
+            Undo.DestroyObjectImmediate(deleteReservationList[i - 1]);
         }
 
-        if (rangeStartIndex.y > rangeEndIndex.y)
-        {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
-        }
-
-        if (rangeStartIndex.z > rangeEndIndex.z)
-        {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
-        }
-
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    if (gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k] == null)
-                    {
-                        continue;
-                    }
-
-                    deleteIndexList.Add((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                        rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1);
-
-                    Undo.DestroyObjectImmediate(gridManager.placedObjects[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k]);
-                    Undo.RecordObject(gridManager, "Delete PlacedFlag");
-                    gridManager.isPlaced[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k] = false;
-                    Undo.RecordObject(gridManager, "Delete PlacedFlag");
-                    gridManager.placedObjects[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k] = null;
-                    indexNumList.Add(((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                      rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k));
-                }
-            }
-        }
-
-        for (int i = 0; i < ((GameObject)GridEditorWindow.gridObject).transform.childCount;)
-        {
-            if (((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).name != "BlockDummy")
-            {
-                ++i;
-                continue;
-            }
-
-            if (deleteIndexList.Contains(((GameObject)GridEditorWindow.gridObject).transform.GetChild(i)
-                    .GetComponent<GridRelatedInfo>().gridIndex))
-            {
-                Undo.DestroyObjectImmediate(((GameObject)GridEditorWindow.gridObject).transform.GetChild(i).gameObject);
-                continue;
-            }
-
-            ++i;
-        }
+        deleteReservationList.Clear();
     }
 
-    private void ReplaceReservationObj(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
+    private void ConfirmReplace()
     {
-        Vector3Int size = gridManager.size;
-
-        if (rangeStartIndex.x > rangeEndIndex.x)
+        for (int i = deleteReservationList.Count; i > 0; i--)
         {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
+            instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
+            ((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
+            ((GameObject)instantiateBuffer).transform.position = deleteReservationList[i- 1].transform.position;
+                Undo.RegisterCreatedObjectUndo(instantiateBuffer, "placed prefab");
+
+            Undo.RecordObject(gridManager, "isPlaced Check");
+            gridManager.inGridObjects.Add(((GameObject)instantiateBuffer));
+
+            var dummy = PrefabUtility.InstantiatePrefab(dummyBlock);
+            ((GameObject)dummy).hideFlags = HideFlags.HideInHierarchy;
+            ((GameObject)dummy).transform.position =
+                ((GameObject)instantiateBuffer).transform.position;
+            ((GameObject)dummy).transform.parent = ((GameObject)instantiateBuffer).transform;
+            ((GameObject)dummy).GetComponent<MeshRenderer>().enabled = false;
+            Undo.RegisterCreatedObjectUndo(dummy, "placed prefab");
+
+            gridManager.inGridObjects.Remove(deleteReservationList[i - 1]);
+            Undo.DestroyObjectImmediate(deleteReservationList[i - 1]);
         }
 
-        if (rangeStartIndex.y > rangeEndIndex.y)
-        {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
-        }
-
-        if (rangeStartIndex.z > rangeEndIndex.z)
-        {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
-        }
-
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    //instantiateBuffer = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-                    //((GameObject)instantiateBuffer).transform.parent = gridManager.gameObject.transform;
-                    //((GameObject)instantiateBuffer).transform.position =
-                    //    gridManager.gridPosFromIndexMultiple[rangeStartIndex.x, rangeStartIndex.y, rangeStartIndex.z] +
-                    //    new Vector3((j) * 1.0f, (k) * 1.0f, (i) * 1.0f);
-                    //((GameObject)instantiateBuffer).name = "visualizeObj";
-
-                    if (gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y +
-                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>() != null)
-                    {
-                        Undo.RecordObject(gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y +
-                                (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>(), "invisible mesh");
-
-                        gridManager.placedObjects[
-                                (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k].gameObject.transform
-                            .GetComponent<MeshRenderer>().enabled = false;
-
-                        var go = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-                        ((GameObject)go).gameObject.transform.position = gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].gameObject.transform.position;
-
-                        var a = ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                 rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k, (GameObject)go);
-
-                        replaceReservation.Add(a);
-                    }
-                    else
-                    {
-                        Undo.RecordObject(gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].gameObject, "invisible mesh");
-
-                        gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].SetActive(false);
-
-                        var go = PrefabUtility.InstantiatePrefab(GridEditorWindow.obj);
-                        ((GameObject)go).gameObject.transform.position = gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                            rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k].gameObject.transform.position;
-
-                        var a = ((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                 rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k, (GameObject)go);
-
-                        replaceReservation.Add(a);
-                    }
-                }
-            }
-        }
-    }
-
-    private void CancelReplaceReservationObj()
-    {
-        foreach (var placedObject in gridManager.placedObjects)
-        {
-            if (placedObject == null)
-            {
-                continue;
-            }
-
-            if (placedObject.GetComponent<Renderer>() != null)
-            {
-                if (!placedObject.GetComponent<Renderer>().enabled)
-                {
-                    placedObject.GetComponent<Renderer>().enabled = true;
-                }
-
-            }
-            else
-            {
-                placedObject.gameObject.SetActive(true);
-            }
-        }
-
-        foreach (var valueTuple in replaceReservation)
-        {
-            Undo.DestroyObjectImmediate(valueTuple.Item2);
-        }
-        
-        replaceReservation.Clear();
-    }
-
-    private void ConfirmReplaceObj(Vector3Int rangeStartIndex, Vector3Int rangeEndIndex)
-    {
-        Vector3Int size = gridManager.size;
-        List<int> deleteIndexList = new List<int>();
-        List<GameObject> dummyObj = new List<GameObject>();
-
-        if (rangeStartIndex.x > rangeEndIndex.x)
-        {
-            (rangeStartIndex.x, rangeEndIndex.x) = (rangeEndIndex.x, rangeStartIndex.x);
-        }
-
-        if (rangeStartIndex.y > rangeEndIndex.y)
-        {
-            (rangeStartIndex.y, rangeEndIndex.y) = (rangeEndIndex.y, rangeStartIndex.y);
-        }
-
-        if (rangeStartIndex.z > rangeEndIndex.z)
-        {
-            (rangeStartIndex.z, rangeEndIndex.z) = (rangeEndIndex.z, rangeStartIndex.z);
-        }
-
-        for (int i = 0; i < rangeEndIndex.z - rangeStartIndex.z + 1; i++)
-        {
-            for (int j = 0; j < rangeEndIndex.x - rangeStartIndex.x + 1; j++)
-            {
-                for (int k = 0; k < rangeEndIndex.y - rangeStartIndex.y + 1; k++)
-                {
-                    if (gridManager.placedObjects[
-                            (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                            (i * size.x * size.y) + (j * size.y) + k] == null)
-                    {
-                        continue;
-                    }
-
-                    deleteIndexList.Add((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                                        rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k + 1);
-
-                    Undo.DestroyObjectImmediate(gridManager.placedObjects[
-                        (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                        (i * size.x * size.y) + (j * size.y) + k]);
-
-                    //Undo.RecordObject(gridManager, "Delete PlacedFlag");
-                    //gridManager.isPlaced[
-                    //    (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                    //    (i * size.x * size.y) + (j * size.y) + k] = false;
-                    //Undo.RecordObject(gridManager, "Delete PlacedFlag");
-                    //gridManager.placedObjects[
-                    //    (rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) + rangeStartIndex.y +
-                    //    (i * size.x * size.y) + (j * size.y) + k] = null;
-                    //indexNumList.Add(((rangeStartIndex.z * size.x * size.y) + (rangeStartIndex.x * size.y) +
-                    //                  rangeStartIndex.y + (i * size.x * size.y) + (j * size.y) + k));
-                }
-            }
-        }
-
-        foreach (var valueTuple in replaceReservation)
-        {
-            valueTuple.Item2.transform.parent = ((GameObject)GridEditorWindow.gridObject).transform;
-
-            gridManager.placedObjects[
-                valueTuple.Item1] = valueTuple.Item2;
-        }
+        deleteReservationList.Clear();
     }
 }
 

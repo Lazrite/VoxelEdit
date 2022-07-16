@@ -7,6 +7,9 @@ using UnityEditor.SceneManagement;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
+/// <summary>
+/// ウィンドウ情報クラス
+/// </summary>
 public class GridEditorWindow : EditorWindow
 {
     // 置きたいオブジェクト
@@ -59,7 +62,7 @@ public class GridEditorWindow : EditorWindow
 
         using (new EditorGUILayout.HorizontalScope())
         {
-
+            // 各ツールモードボタン
             using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
                 EditorGUILayout.LabelField("選択モード", GUILayout.Width(64));
@@ -211,12 +214,12 @@ public class GridEditorWindow : EditorWindow
 
                 EditorGUI.BeginChangeCheck();
 
+                // グリッドオブジェクト(こちらはシーン内のオブジェクトをアタッチする)
                 gridObject = EditorGUILayout.ObjectField("グリッドオブジェクト", gridObject, typeof(GameObject), true) as GameObject;
 
                 if (EditorGUI.EndChangeCheck())
                 {
                     Visualizer.DestroyVisualizer();
-                    ((GameObject)gridObject).GetComponent<EditorGridField>().PreLoadGridInfo();
                 }
 
                 if (gridObject != null)
@@ -228,6 +231,7 @@ public class GridEditorWindow : EditorWindow
                         EditorGUILayout.Vector3IntField("グリッドサイズ",
                             ((GameObject)gridObject).GetComponent<EditorGridField>().size);
 
+                    // 不正値入力防止
                     if (((GameObject)gridObject).GetComponent<EditorGridField>().size.x <= 0)
                     {
                         ((GameObject)gridObject).GetComponent<EditorGridField>().size.x = 1;
@@ -243,6 +247,8 @@ public class GridEditorWindow : EditorWindow
 
                     if (EditorGUI.EndChangeCheck())
                     {
+                        // 大きさが変わったらグリッド完全消去(現在警告なし)
+                        // TODO: ちゃんと情報を保存できるようにしなきゃ！！！！！！
                         Undo.RecordObject(((GameObject)gridObject).GetComponent<EditorGridField>(), "Clear Grid");
                         ((GameObject)gridObject).GetComponent<EditorGridField>().ClearGrid();
                         ((GameObject)gridObject).GetComponent<EditorGridField>().InstantiateGridField();
@@ -272,8 +278,10 @@ public class GridEditorWindow : EditorWindow
                         }
                     };
 
+                    // グリッド完全消去ボタン
                     if (GUILayout.Button(new GUIContent("グリッド完全消去"), style))
                     {
+                        // 最終警告
                         if (EditorUtility.DisplayDialog("グリッドを完全に消去しようとしています！", "これを実行するとグリッド内のオブジェクトはすべて消去され、復元出来ません！",
                                 "実行", "キャンセル"))
                         {
@@ -282,11 +290,13 @@ public class GridEditorWindow : EditorWindow
                         }
                     }
 
+                    // JSONコンバートボタン
                     if (GUILayout.Button(new GUIContent("Jsonにコンバート"), style))
                     {
                         List<GameObject> convObj = new List<GameObject>();
 
-                        foreach (GameObject convert in ((GameObject)gridObject).GetComponent<EditorGridField>().placedObjects)
+                        // 出力用オブジェクトをリストに格納
+                        foreach (GameObject convert in ((GameObject)gridObject).GetComponent<EditorGridField>().transform)
                         {
                             if (convert == null)
                             {
@@ -310,26 +320,13 @@ public class GridEditorWindow : EditorWindow
             Process.Start("ReadMe.html");
         }
 
+        // 数値変更確認
         if (EditorGUI.EndChangeCheck())
         {
             EditorSceneManager.MarkSceneDirty(SceneManager.GetActiveScene());
         }
 
     }
-
-    private void OnInspectorUpdate()
-    {
-        if (((GameObject)gridObject) != null)
-        {
-            if (transformBuffer != ((GameObject)gridObject).transform.position)
-            {
-                ((GameObject)gridObject).GetComponent<EditorGridField>().ReCalculationGridPos();
-                transformBuffer = ((GameObject)gridObject).transform.position;
-            }
-        }
-    }
-
-
 }
 
 #endif // UNITY_EDITOR

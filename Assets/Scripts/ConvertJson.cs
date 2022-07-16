@@ -3,24 +3,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using System.IO;
 
+/// <summary>
+/// ブロック１つがもつ情報
+/// </summary>
 [System.Serializable]
 public class BlockPropaties
 {
-    public Vector3 transform;
-    public Vector3 rotation;
-    public Vector3 scale;
-    public int id;
-    public bool isRandomize;
-    public bool isMonoSpaced;
-    public bool isCollision;
+    public Vector3 transform;   // トランスフォーム
+    public Vector3 rotation;    // 回転
+    public Vector3 scale;       // 大きさ
+    public int id;              // モデルID
+    public bool isRandomize;    // ランダマイザ可否
+    public bool isMonoSpaced;   // 等幅かどうか
+    public bool isCollision;    // 当たり判定があるか
 }
 
+/// <summary>
+/// シリアライズ用クラス
+/// </summary>
 [System.Serializable]
 public class GridPropaties
 {
     public List<BlockPropaties> propaties = new List<BlockPropaties>();
 }
 
+/// <summary>
+/// JSONコンバーター
+/// </summary>
 public class ConvertJson
 {
     public static void SaveJson(List<GameObject> obj)
@@ -29,6 +38,7 @@ public class ConvertJson
         writer = new StreamWriter(Application.dataPath + "/savedata.json", false);
         GridPropaties propaty = new GridPropaties();
 
+        // ブロック情報を取得、シリアライズ用クラスに格納
         foreach (var dataInfo in obj)
         {
             BlockPropaties data = new BlockPropaties();
@@ -45,6 +55,7 @@ public class ConvertJson
 
         string jsonstr = JsonUtility.ToJson(propaty);
 
+        // 書き込み
         writer.Write(jsonstr);
         writer.Flush();
 
