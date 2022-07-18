@@ -317,7 +317,7 @@ public class GridEditorWindow : EditorWindow
         // 操作説明ボタン
         if (GUILayout.Button(new GUIContent("操作方法についてはこちら")))
         {
-            Process.Start("ReadMe.html");
+            Process.Start(url);
         }
 
         // 数値変更確認
