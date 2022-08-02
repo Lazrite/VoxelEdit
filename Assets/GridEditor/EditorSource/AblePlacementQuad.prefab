@@ -12,8 +12,6 @@ GameObject:
   - component: {fileID: 1918787584079139658}
   - component: {fileID: 1918787584079139659}
   - component: {fileID: 1918787584079139656}
-  - component: {fileID: 3396544889710334601}
-  - component: {fileID: -1344071123543054806}
   m_Layer: 0
   m_Name: AblePlacementQuad
   m_TagString: Untagged
@@ -98,28 +96,3 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: 10210, guid: 0000000000000000e000000000000000, type: 0}
---- !u!114 &3396544889710334601
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1918787584079139657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 141f45543ee642145b5226ade1382bce, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &-1344071123543054806
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1918787584079139657}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 465a7edf15f9aca41a90fdba7c8bd443, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  gridIndex: 0

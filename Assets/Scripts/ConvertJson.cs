@@ -9,13 +9,14 @@ using System.IO;
 [System.Serializable]
 public class BlockPropaties
 {
-    public Vector3 transform;   // トランスフォーム
-    public Vector3 rotation;    // 回転
-    public Vector3 scale;       // 大きさ
-    public int id;              // モデルID
-    public bool isRandomize;    // ランダマイザ可否
-    public bool isMonoSpaced;   // 等幅かどうか
-    public bool isCollision;    // 当たり判定があるか
+    public Vector3 transform;       // トランスフォーム
+    public Vector3 rotation;        // 回転
+    public Vector3 scale;           // 大きさ
+    public int id;                  // モデルID
+    public bool isRandomize;        // ランダマイザ可否
+    public bool isMonoSpaced;       // 等幅かどうか
+    public bool isCollision;        // 当たり判定があるか
+    public bool isinTrustUserMesh;  // ユーザー定義のメッシュに任せるかどうか
 }
 
 /// <summary>
@@ -48,6 +49,7 @@ public class ConvertJson
             data.isRandomize = dataInfo.transform.GetComponent<JsonConvertPropaties>().isRandomize;
             data.isMonoSpaced = dataInfo.transform.GetComponent<JsonConvertPropaties>().isMonoSpaced;
             data.isCollision = dataInfo.transform.GetComponent<JsonConvertPropaties>().isCollision;
+            data.isinTrustUserMesh = dataInfo.transform.GetComponent<JsonConvertPropaties>().isintrustUserMesh;
             data.id = dataInfo.transform.GetComponent<JsonConvertPropaties>().ID;
             propaty.propaties.Add(data);
 

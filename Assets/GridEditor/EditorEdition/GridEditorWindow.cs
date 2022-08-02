@@ -296,7 +296,7 @@ public class GridEditorWindow : EditorWindow
                         List<GameObject> convObj = new List<GameObject>();
 
                         // 出力用オブジェクトをリストに格納
-                        foreach (GameObject convert in ((GameObject)gridObject).GetComponent<EditorGridField>().transform)
+                        foreach (GameObject convert in ((GameObject)gridObject).GetComponent<EditorGridField>().inGridObjects)
                         {
                             if (convert == null)
                             {

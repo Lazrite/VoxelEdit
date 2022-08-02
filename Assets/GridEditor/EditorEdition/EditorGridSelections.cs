@@ -137,6 +137,12 @@ public class EditorGridSelections
             }
         }
 
+        // 親のグリッドオブジェクトが違う場合return
+        if (hit.collider != null && hit.collider.gameObject.transform.parent.root != ((GameObject)GridEditorWindow.gridObject).transform)
+        {
+            return;
+        }
+
         // 例が何にもあたってなかったらreturn
         if (hit.collider == null)
         {
@@ -159,9 +165,9 @@ public class EditorGridSelections
         // 範囲外なら設置しない
         if (hit.collider.name != "AblePlacementAround" && toolMode == ToolMode.ToolPlace)
         {
-            if (hit.collider.gameObject.transform.position.x < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.x > (gridManager.gridScale * gridManager.size.x) - gridManager.gridScale / 2 ||
-                hit.collider.gameObject.transform.position.y < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.y > (gridManager.gridScale * gridManager.size.y) - gridManager.gridScale / 2 ||
-                hit.collider.gameObject.transform.position.z < gridManager.gridScale / 2 || hit.collider.gameObject.transform.position.z > (gridManager.gridScale * gridManager.size.z) - gridManager.gridScale / 2)
+            if (hit.collider.gameObject.transform.position.x < gridManager.gridScale / 2 + ((GameObject)GridEditorWindow.gridObject).transform.position.x || hit.collider.gameObject.transform.position.x > (gridManager.gridScale * gridManager.size.x) - gridManager.gridScale / 2+ ((GameObject)GridEditorWindow.gridObject).transform.position.x||
+                hit.collider.gameObject.transform.position.y < gridManager.gridScale / 2 + ((GameObject)GridEditorWindow.gridObject).transform.position.y || hit.collider.gameObject.transform.position.y > (gridManager.gridScale * gridManager.size.y) - gridManager.gridScale / 2 + ((GameObject)GridEditorWindow.gridObject).transform.position.y||
+                hit.collider.gameObject.transform.position.z < gridManager.gridScale / 2 + ((GameObject)GridEditorWindow.gridObject).transform.position.z || hit.collider.gameObject.transform.position.z > (gridManager.gridScale * gridManager.size.z) - gridManager.gridScale / 2 + ((GameObject)GridEditorWindow.gridObject).transform.position.z) 
             {
                 return;
             }

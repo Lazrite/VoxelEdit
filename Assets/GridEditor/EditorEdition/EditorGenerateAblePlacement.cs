@@ -4,7 +4,7 @@ using UnityEditor;
 using UnityEngine;
 
 [ExecuteAlways]
-public class EditorGenerateAblePlacement : MonoBehaviour
+public abstract class EditorGenerateAblePlacement : MonoBehaviour
 {
     private GameObject areaGameObject;
 

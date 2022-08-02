@@ -76,4 +76,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   isRandomize: 1
   isCollision: 1
+  isMonoSpaced: 0
+  isintrustUserMesh: 1
   ID: 1

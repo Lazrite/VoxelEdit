@@ -142,4 +142,5 @@ MonoBehaviour:
   isRandomize: 0
   isCollision: 1
   isMonoSpaced: 0
+  isintrustUserMesh: 1
   ID: 0
