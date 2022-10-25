@@ -13,6 +13,7 @@ public class BlockPropaties
     public Vector3 rotation;        // 回転
     public Vector3 scale;           // 大きさ
     public int id;                  // モデルID
+    public bool isSpawnPoint;        // エンティティのスポーンポイントかどうか
     public bool isRandomize;        // ランダマイザ可否
     public bool isMonoSpaced;       // 等幅かどうか
     public bool isCollision;        // 当たり判定があるか
@@ -46,6 +47,7 @@ public class ConvertJson
             data.transform = dataInfo.transform.position;
             data.rotation = dataInfo.transform.eulerAngles;
             data.scale = dataInfo.transform.localScale;
+            data.isSpawnPoint = dataInfo.transform.GetComponent<JsonConvertPropaties>().isSpawnPoint;
             data.isRandomize = dataInfo.transform.GetComponent<JsonConvertPropaties>().isRandomize;
             data.isMonoSpaced = dataInfo.transform.GetComponent<JsonConvertPropaties>().isMonoSpaced;
             data.isCollision = dataInfo.transform.GetComponent<JsonConvertPropaties>().isCollision;

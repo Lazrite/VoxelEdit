@@ -125,8 +125,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b82f1d7e3724ce44cb2b1fe0d8d48bb2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  isSpawnPoint: 0
   isRandomize: 1
-  isCollision: 1
+  isCollision: 0
   isMonoSpaced: 0
   isintrustUserMesh: 1
   ID: 2
